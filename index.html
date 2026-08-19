@@ -207,11 +207,38 @@
   #login-box{background:var(--bg-floating);border-radius:8px;padding:32px;width:400px;max-width:90vw;text-align:center;}
   #login-box h1{margin:0 0 8px;font-size:24px;}
   #login-box p{color:var(--text-muted);font-size:14px;margin:0 0 20px;}
+  #loading-screen{
+    position:fixed;inset:0;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;
+    z-index:500;color:var(--text-muted);font-size:14px;
+  }
+
+  /* ---------- missed call ---------- */
+  #call-missed{
+    position:absolute;bottom:120px;left:50%;transform:translateX(-50%);
+    background:var(--bg-floating);padding:16px 22px;border-radius:10px;text-align:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  #call-missed .btn{margin:0 4px;}
+
+  /* ---------- mobile ---------- */
+  #back-to-friends-btn{display:none;}
+  @media (max-width:768px){
+    #rail{width:56px;}
+    #sidebar{width:100%;flex:1;}
+    #app.chat-open #sidebar,
+    #app.chat-open #rail{display:none;}
+    #app:not(.chat-open) #main{display:none;}
+    #back-to-friends-btn{display:flex !important;}
+    #local-video-wrap{width:120px;height:80px;bottom:12px;right:12px;}
+    #call-missed{bottom:130px;width:85%;}
+  }
 </style>
 </head>
 <body>
 
-<div id="login-screen">
+<div id="loading-screen">Загрузка...</div>
+
+<div id="login-screen" class="hidden">
   <div id="login-box">
     <h1>Bitrate</h1>
     <p>Придумай юзернейм, чтобы друзья могли тебя найти.</p>
@@ -225,7 +252,6 @@
   <div id="rail">
     <button class="rail-btn active" title="Личные сообщения">💬</button>
     <div class="rail-spacer"></div>
-    <button class="rail-btn" id="theme-toggle-rail" title="Тема">🌙</button>
     <button class="rail-btn" id="settings-btn-rail" title="Настройки">⚙️</button>
   </div>
 
@@ -251,6 +277,7 @@
     <div id="chat-view" class="hidden" style="display:flex;flex-direction:column;height:100%;">
       <div id="chat-header">
         <div class="header-left">
+          <button class="icon-btn" id="back-to-friends-btn" title="Назад">←</button>
           <div class="avatar" id="chat-avatar" style="width:24px;height:24px;font-size:11px;"></div>
           <span id="chat-title"></span>
         </div>
@@ -331,6 +358,11 @@
     </div>
     <video id="remote-video" autoplay playsinline class="hidden"></video>
     <div id="local-video-wrap" class="hidden"><video id="local-video" autoplay muted playsinline></video></div>
+    <div id="call-missed" class="hidden">
+      <div style="margin-bottom:10px;font-size:14px;">Абонент не отвечает</div>
+      <button class="btn" id="recall-btn">Перезвонить</button>
+      <button class="btn btn-secondary" id="exit-missed-btn">Выйти</button>
+    </div>
   </div>
   <div id="call-controls">
     <button class="call-btn active" id="toggle-mic-btn" title="Микрофон">🎙️</button>
@@ -395,7 +427,6 @@ function renderAvatar(el, name, avatarUrl, size){
 }
 function applyTheme(){
   document.body.classList.toggle("light", theme === "light");
-  $("theme-toggle-rail").textContent = theme === "light" ? "☀️" : "🌙";
   $("theme-toggle-settings").classList.toggle("on", theme === "light");
   localStorage.setItem("bitrate-theme", theme);
 }
@@ -404,17 +435,26 @@ function toggleTheme(){ theme = theme === "light" ? "dark" : "light"; applyTheme
 // ---------- auth / login ----------
 onAuthStateChanged(auth, async (user) => {
   if(!user) return;
-  const userDoc = await getDoc(doc(db, "users", user.uid));
-  if(userDoc.exists()){
-    me = { uid: user.uid, ...userDoc.data() };
-    enterApp();
-  } else {
+  try{
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    $("loading-screen").classList.add("hidden");
+    if(userDoc.exists()){
+      me = { uid: user.uid, ...userDoc.data() };
+      enterApp();
+    } else {
+      $("login-screen").classList.remove("hidden");
+      $("app").classList.add("hidden");
+    }
+  }catch(e){
+    $("loading-screen").classList.add("hidden");
     $("login-screen").classList.remove("hidden");
-    $("app").classList.add("hidden");
+    $("login-error").textContent = "Ошибка подключения: " + e.message;
   }
 });
 
 signInAnonymously(auth).catch((e) => {
+  $("loading-screen").classList.add("hidden");
+  $("login-screen").classList.remove("hidden");
   $("login-error").textContent = "Не удалось подключиться к Firebase: " + e.message;
 });
 
@@ -429,14 +469,10 @@ $("login-btn").onclick = async () => {
   if(!user){ $("login-error").textContent = "Нет соединения, попробуйте ещё раз."; return; }
 
   // check username taken
-  const q = query(collection(db,"users"), where("username","==",raw), limit(1));
-  const snap = await new Promise((resolve) => {
-    onSnapshot(q, resolve, () => resolve({empty:true}));
-  });
-  // simple one-shot check via getDocs alternative:
   try{
-    const takenSnap = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js")
-      .then(m => m.getDocs(q));
+    const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    const q = query(collection(db,"users"), where("username","==",raw), limit(1));
+    const takenSnap = await getDocs(q);
     if(!takenSnap.empty && takenSnap.docs[0].id !== user.uid){
       $("login-error").textContent = "Этот юзернейм уже занят.";
       return;
@@ -503,8 +539,10 @@ function renderFriendList(){
 
 $("add-friend-btn").onclick = () => { $("add-friend-overlay").classList.remove("hidden"); $("friend-search-input").focus(); };
 $("close-add-friend").onclick = () => { $("add-friend-overlay").classList.add("hidden"); $("friend-search-input").value=""; $("friend-search-results").innerHTML=""; };
+$("back-to-friends-btn").onclick = () => { $("app").classList.remove("chat-open"); };
 
 let searchTimeout;
+let searchToken = 0;
 $("friend-search-input").addEventListener("input", (e) => {
   clearTimeout(searchTimeout);
   const val = e.target.value.trim().toLowerCase();
@@ -512,9 +550,9 @@ $("friend-search-input").addEventListener("input", (e) => {
 });
 
 async function runFriendSearch(val){
+  const myToken = ++searchToken;
   const box = $("friend-search-results");
-  box.innerHTML = "";
-  if(!val) return;
+  if(!val){ box.innerHTML = ""; return; }
   const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
   const q = query(
     collection(db,"users"),
@@ -524,6 +562,8 @@ async function runFriendSearch(val){
     limit(8)
   );
   const snap = await getDocs(q);
+  if(myToken !== searchToken) return; // ответ устарел — уже идёт более новый запрос
+  box.innerHTML = "";
   const results = snap.docs
     .map(d => ({ uid: d.id, ...d.data() }))
     .filter(u => u.uid !== me.uid && !friends.some(f => f.uid === u.uid));
@@ -562,6 +602,7 @@ function openChat(friend){
   renderFriendList();
   $("no-chat").classList.add("hidden");
   $("chat-view").classList.remove("hidden");
+  $("app").classList.add("chat-open");
   renderAvatar($("chat-avatar"), friend.nickname, friend.avatar);
   $("chat-title").textContent = friend.nickname;
 
@@ -615,7 +656,6 @@ function openSettings(){ $("settings-overlay").classList.remove("hidden"); }
 $("settings-btn-rail").onclick = openSettings;
 $("settings-btn-bar").onclick = openSettings;
 $("close-settings").onclick = () => $("settings-overlay").classList.add("hidden");
-$("theme-toggle-rail").onclick = toggleTheme;
 $("theme-toggle-settings").onclick = toggleTheme;
 
 $("avatar-input").addEventListener("change", (e) => {
@@ -645,6 +685,8 @@ let unsubOfferCand = null, unsubAnswerCand = null;
 let callTimerInterval = null;
 let callSeconds = 0;
 let micOn = true, camOn = true, sharing = false;
+let noAnswerTimer = null;
+let lastCallFriend = null, lastCallType = null;
 
 function listenIncomingCalls(){
   const q = query(collection(db,"calls"), where("calleeId","==",me.uid), where("status","==","ringing"));
@@ -667,13 +709,14 @@ function showIncomingCall(call){
   $("incoming-name").textContent = friend.nickname;
   $("incoming-type").textContent = (call.type === "video" ? "Видеозвонок" : "Аудиозвонок") + "...";
 
-  $("accept-btn").onclick = async () => {
+  $("accept-call-btn").onclick = async () => {
     $("incoming-call").classList.add("hidden");
-    await answerCall(call, friend);
+    try{ await answerCall(call, friend); }
+    catch(e){ alert("Не удалось принять звонок: " + e.message); }
   };
-  $("decline-btn").onclick = async () => {
+  $("decline-call-btn").onclick = async () => {
     $("incoming-call").classList.add("hidden");
-    await updateDoc(doc(db,"calls",call.id), { status: "ended" });
+    try{ await updateDoc(doc(db,"calls",call.id), { status: "ended" }); }catch(e){}
   };
 }
 
@@ -697,6 +740,7 @@ function createPC(){
 
 function openCallOverlay(friend, type){
   $("call-overlay").classList.remove("hidden");
+  $("call-missed").classList.add("hidden");
   renderAvatar($("call-remote-avatar"), friend.nickname, friend.avatar);
   $("call-remote-name").textContent = friend.nickname;
   $("call-hint").textContent = "Соединение...";
@@ -743,18 +787,39 @@ async function startCall(friend, type){
   });
 
   openCallOverlay(friend, type);
+  lastCallFriend = friend; lastCallType = type;
+
+  clearTimeout(noAnswerTimer);
+  noAnswerTimer = setTimeout(async () => {
+    try{
+      const snap = await getDoc(callRef);
+      if(snap.exists() && snap.data().status === "ringing"){
+        await updateDoc(callRef, { status: "missed" });
+      }
+    }catch(e){}
+  }, 30000);
 
   unsubCallDoc = onSnapshot(callRef, (snap) => {
     const data = snap.data();
     if(!data) return;
     if(data.answer && pc.signalingState !== "stable"){
       pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+      clearTimeout(noAnswerTimer);
     }
     if(data.status === "ended") teardownCall();
+    if(data.status === "missed") showMissedCall();
   });
   unsubAnswerCand = onSnapshot(answerCandidates, (snap) => {
     snap.docChanges().forEach(c => { if(c.type==="added") pc.addIceCandidate(new RTCIceCandidate(c.doc.data())); });
   });
+}
+
+function showMissedCall(){
+  clearInterval(callTimerInterval);
+  clearTimeout(noAnswerTimer);
+  $("call-hint").textContent = "";
+  $("call-status-text").textContent = "Не отвечает";
+  $("call-missed").classList.remove("hidden");
 }
 
 async function answerCall(call, friend){
@@ -787,12 +852,14 @@ async function answerCall(call, friend){
 
 function teardownCall(){
   clearInterval(callTimerInterval);
+  clearTimeout(noAnswerTimer);
   if(unsubOfferCand) unsubOfferCand();
   if(unsubAnswerCand) unsubAnswerCand();
   if(unsubCallDoc) unsubCallDoc();
   if(pc){ pc.close(); pc = null; }
   if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
   $("call-overlay").classList.add("hidden");
+  $("call-missed").classList.add("hidden");
   $("remote-video").srcObject = null;
   $("local-video").srcObject = null;
   currentCallId = null;
@@ -801,6 +868,16 @@ function teardownCall(){
   $("toggle-cam-btn").classList.remove("active");
   $("toggle-share-btn").classList.remove("active");
 }
+
+$("recall-btn").onclick = async () => {
+  $("call-missed").classList.add("hidden");
+  const friend = lastCallFriend, type = lastCallType;
+  teardownCall();
+  if(friend) await startCall(friend, type);
+};
+$("exit-missed-btn").onclick = () => {
+  teardownCall();
+};
 
 $("call-audio-btn").onclick = () => activeFriend && startCall(activeFriend, "audio");
 $("call-video-btn").onclick = () => activeFriend && startCall(activeFriend, "video");
