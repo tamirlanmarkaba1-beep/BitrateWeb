@@ -204,9 +204,12 @@
   #login-screen{
     position:fixed;inset:0;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;z-index:500;
   }
-  #login-box{background:var(--bg-floating);border-radius:8px;padding:32px;width:400px;max-width:90vw;text-align:center;}
-  #login-box h1{margin:0 0 8px;font-size:24px;}
-  #login-box p{color:var(--text-muted);font-size:14px;margin:0 0 20px;}
+  #login-box{background:var(--bg-floating);border-radius:8px;padding:32px;width:400px;max-width:90vw;text-align:left;}
+  #login-box h1{margin:0 0 8px;font-size:24px;text-align:center;}
+  #login-box p{color:var(--text-muted);font-size:14px;margin:0 0 20px;text-align:center;}
+  .auth-switch{text-align:center;font-size:13px;color:var(--text-muted);margin-top:14px;}
+  .auth-switch span{color:var(--text-link);cursor:pointer;}
+  .auth-switch span:hover{text-decoration:underline;}
 
   /* ---------- missed call ---------- */
   #call-missed{
@@ -243,11 +246,22 @@
 
 <div id="login-screen" class="hidden">
   <div id="login-box">
-    <h1>Bitrate</h1>
-    <p>Придумай юзернейм, чтобы друзья могли тебя найти.</p>
+    <h1 id="auth-title">Вход в Bitrate</h1>
+    <p id="auth-subtitle">С возвращением! Мы так скучали!</p>
+    
+    <label class="field-label">Юзернейм</label>
     <input id="login-username" class="field-input" placeholder="ваш_юзернейм" autocomplete="off" />
+    
+    <label class="field-label">Пароль</label>
+    <input id="login-password" type="password" class="field-input" placeholder="Ваш пароль" autocomplete="off" />
+
     <div id="login-error" style="color:#f23f43;font-size:13px;margin-bottom:10px;min-height:16px;"></div>
-    <button class="btn" id="login-btn" style="width:100%;">Продолжить</button>
+    
+    <button class="btn" id="login-btn" style="width:100%;">Войти</button>
+    
+    <div class="auth-switch" id="auth-switch-text">
+      Нужен аккаунт? <span id="toggle-auth-mode">Зарегистрироваться</span>
+    </div>
   </div>
 </div>
 
@@ -255,6 +269,7 @@
   <div id="rail">
     <button class="rail-btn active" title="Личные сообщения">💬</button>
     <div class="rail-spacer"></div>
+    <button class="rail-btn" id="logout-btn" title="Выйти из аккаунта" style="font-size:18px;">🚪</button>
   </div>
 
   <div id="sidebar">
@@ -381,10 +396,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection,
-  query, where, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc
+  query, where, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  getAuth, signInAnonymously, onAuthStateChanged
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // ---------- FIREBASE CONFIG ----------
@@ -410,6 +425,7 @@ let unsubMessages = null;
 let unsubFriends = null;
 let unsubIncoming = null;
 let unsubCallDoc = null;
+let isRegisterMode = false;
 let theme = localStorage.getItem("bitrate-theme") || "dark";
 
 const ADMIN_USERNAME = "tamirlan_dev";
@@ -441,13 +457,17 @@ function toggleTheme(){ theme = theme === "light" ? "dark" : "light"; applyTheme
 // ---------- AUTH LOGIC ----------
 const loadingStatus = $("loading-status");
 
+// Преобразование юзернейма в служебный Email для Firebase Auth
+function usernameToEmail(username) {
+  return `${username}@bitrate.app`;
+}
+
 onAuthStateChanged(auth, async (user) => {
   if(!user){
-    try {
-      await signInAnonymously(auth);
-    } catch(e) {
-      if(loadingStatus) loadingStatus.textContent = "Ошибка авторизации: " + e.message;
-    }
+    $("loading-screen").classList.add("hidden");
+    $("login-screen").classList.remove("hidden");
+    $("app").classList.add("hidden");
+    me = null;
     return;
   }
   
@@ -468,45 +488,94 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-$("login-btn").onclick = async () => {
-  const raw = $("login-username").value.trim().toLowerCase();
+// Переключение Регистрация / Вход
+$("toggle-auth-mode").onclick = () => {
+  isRegisterMode = !isRegisterMode;
   $("login-error").textContent = "";
-  if(!/^[a-z0-9_.]{3,20}$/.test(raw)){
-    $("login-error").textContent = "3-20 символов: латиница, цифры, _ .";
+  if (isRegisterMode) {
+    $("auth-title").textContent = "Создать аккаунт";
+    $("auth-subtitle").textContent = "Добро пожаловать! Введите данные для регистрации.";
+    $("login-btn").textContent = "Зарегистрироваться";
+    $("auth-switch-text").innerHTML = 'Уже есть аккаунт? <span id="toggle-auth-mode">Войти</span>';
+  } else {
+    $("auth-title").textContent = "Вход в Bitrate";
+    $("auth-subtitle").textContent = "С возвращением! Мы так скучали!";
+    $("login-btn").textContent = "Войти";
+    $("auth-switch-text").innerHTML = 'Нужен аккаунт? <span id="toggle-auth-mode">Зарегистрироваться</span>';
+  }
+  $("toggle-auth-mode").onclick = $("toggle-auth-mode").parentElement.querySelector('span').onclick = arguments.callee;
+};
+
+// Вход / Регистрация по кнопке
+$("login-btn").onclick = async () => {
+  const rawUsername = $("login-username").value.trim().toLowerCase();
+  const password = $("login-password").value;
+  $("login-error").textContent = "";
+
+  if (!/^[a-z0-9_.]{3,20}$/.test(rawUsername)) {
+    $("login-error").textContent = "Юзернейм: 3-20 символов (латиница, цифры, _ .)";
     return;
   }
-  const user = auth.currentUser;
-  if(!user){ $("login-error").textContent = "Нет соединения с сервером."; return; }
+  if (!password || password.length < 6) {
+    $("login-error").textContent = "Пароль должен быть не менее 6 символов.";
+    return;
+  }
 
-  try {
-    const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
-    const q = query(collection(db,"users"), where("username","==",raw), limit(1));
-    const takenSnap = await getDocs(q);
-    if(!takenSnap.empty && takenSnap.docs[0].id !== user.uid){
-      $("login-error").textContent = "Этот юзернейм уже занят.";
-      return;
+  const fakeEmail = usernameToEmail(rawUsername);
+
+  if (isRegisterMode) {
+    // РЕГИСТРАЦИЯ
+    try {
+      const q = query(collection(db, "users"), where("username", "==", rawUsername), limit(1));
+      const takenSnap = await getDocs(q);
+      if (!takenSnap.empty) {
+        $("login-error").textContent = "Этот юзернейм уже занят.";
+        return;
+      }
+
+      const res = await createUserWithEmailAndPassword(auth, fakeEmail, password);
+      const profile = {
+        username: rawUsername,
+        nickname: rawUsername,
+        avatar: null,
+        isVerified: rawUsername === ADMIN_USERNAME,
+        lastUsernameChange: serverTimestamp(),
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(doc(db, "users", res.user.uid), profile);
+      me = { uid: res.user.uid, ...profile };
+      enterApp();
+    } catch (e) {
+      if (e.code === 'auth/email-already-in-use') {
+        $("login-error").textContent = "Этот юзернейм уже зарегистрирован.";
+      } else {
+        $("login-error").textContent = "Ошибка регистрации: " + e.message;
+      }
     }
-  } catch(e){}
-
-  const profile = { 
-    username: raw, 
-    nickname: raw, 
-    avatar: null, 
-    isVerified: raw === ADMIN_USERNAME,
-    lastUsernameChange: serverTimestamp(),
-    createdAt: serverTimestamp() 
-  };
-  
-  try {
-    await setDoc(doc(db,"users",user.uid), profile);
-    me = { uid: user.uid, ...profile };
-    enterApp();
-  } catch(e) {
-    $("login-error").textContent = "Не удалось создать профиль: " + e.message;
+  } else {
+    // ВХОД
+    try {
+      await signInWithEmailAndPassword(auth, fakeEmail, password);
+    } catch (e) {
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+        $("login-error").textContent = "Неверный юзернейм или пароль.";
+      } else {
+        $("login-error").textContent = "Ошибка входа: " + e.message;
+      }
+    }
   }
 };
 
-$("login-username").addEventListener("keydown", (e) => { if(e.key === "Enter") $("login-btn").click(); });
+$("login-password").addEventListener("keydown", (e) => { if(e.key === "Enter") $("login-btn").click(); });
+
+// Кнопка выхода из аккаунта
+$("logout-btn").onclick = () => {
+  if (confirm("Вы действительно хотите выйти из аккаунта?")) {
+    teardownCall();
+    signOut(auth);
+  }
+};
 
 function enterApp(){
   $("login-screen").classList.add("hidden");
@@ -578,7 +647,6 @@ async function runFriendSearch(val){
   const myToken = ++searchToken;
   const box = $("friend-search-results");
   if(!val){ box.innerHTML = ""; return; }
-  const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
   const q = query(
     collection(db,"users"),
     orderBy("username"),
@@ -752,7 +820,6 @@ $("save-settings-btn").onclick = async () => {
     }
 
     try {
-      const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
       const q = query(collection(db,"users"), where("username","==",newUsername), limit(1));
       const takenSnap = await getDocs(q);
       if(!takenSnap.empty && takenSnap.docs[0].id !== me.uid){
