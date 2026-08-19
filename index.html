@@ -207,10 +207,6 @@
   #login-box{background:var(--bg-floating);border-radius:8px;padding:32px;width:400px;max-width:90vw;text-align:center;}
   #login-box h1{margin:0 0 8px;font-size:24px;}
   #login-box p{color:var(--text-muted);font-size:14px;margin:0 0 20px;}
-  #loading-screen{
-    position:fixed;inset:0;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;
-    z-index:500;color:var(--text-muted);font-size:14px;
-  }
 
   /* ---------- missed call ---------- */
   #call-missed{
@@ -240,7 +236,10 @@
 </head>
 <body>
 
-<div id="loading-screen">Загрузка...</div>
+<div id="loading-screen" style="position:fixed;inset:0;background:#1e1f22;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#949ba4;font-size:16px;">
+  <div style="font-size:20px;font-weight:600;margin-bottom:8px;color:#dbdee1;">Bitrate</div>
+  <div id="loading-status">Подключение к сети...</div>
+</div>
 
 <div id="login-screen" class="hidden">
   <div id="login-box">
@@ -388,7 +387,7 @@ import {
   getAuth, signInAnonymously, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// ---------- YOUR FIREBASE CONFIG ----------
+// ---------- FIREBASE CONFIG ----------
 const firebaseConfig = {
   apiKey: "AIzaSyD0U_7IJTQS_Lo6vMVp4l4_wIYlvxeG8Rg",
   authDomain: "bitrate-71684.firebaseapp.com",
@@ -404,7 +403,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 // ---------- state ----------
-let me = null; // { uid, username, nickname, avatar, isVerified, lastUsernameChange }
+let me = null;
 let friends = [];
 let activeFriend = null;
 let unsubMessages = null;
@@ -415,7 +414,6 @@ let theme = localStorage.getItem("bitrate-theme") || "dark";
 
 const ADMIN_USERNAME = "tamirlan_dev";
 
-// ---------- helpers ----------
 function $(id){ return document.getElementById(id); }
 function initials(name){ return (name||"?").slice(0,2).toUpperCase(); }
 function pairId(a,b){ return [a,b].sort().join("_"); }
@@ -423,7 +421,7 @@ function fmtTime(ts){
   const d = ts?.toDate ? ts.toDate() : new Date();
   return d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 }
-function renderAvatar(el, name, avatarUrl, size){
+function renderAvatar(el, name, avatarUrl){
   el.innerHTML = "";
   if(avatarUrl){
     const img = document.createElement("img");
@@ -440,12 +438,24 @@ function applyTheme(){
 }
 function toggleTheme(){ theme = theme === "light" ? "dark" : "light"; applyTheme(); }
 
-// ---------- auth / login ----------
+// ---------- AUTH LOGIC ----------
+const loadingStatus = $("loading-status");
+
 onAuthStateChanged(auth, async (user) => {
-  if(!user) return;
-  try{
+  if(!user){
+    try {
+      await signInAnonymously(auth);
+    } catch(e) {
+      if(loadingStatus) loadingStatus.textContent = "Ошибка авторизации: " + e.message;
+    }
+    return;
+  }
+  
+  try {
+    if(loadingStatus) loadingStatus.textContent = "Синхронизация профиля...";
     const userDoc = await getDoc(doc(db, "users", user.uid));
     $("loading-screen").classList.add("hidden");
+    
     if(userDoc.exists()){
       me = { uid: user.uid, ...userDoc.data() };
       enterApp();
@@ -453,17 +463,9 @@ onAuthStateChanged(auth, async (user) => {
       $("login-screen").classList.remove("hidden");
       $("app").classList.add("hidden");
     }
-  }catch(e){
-    $("loading-screen").classList.add("hidden");
-    $("login-screen").classList.remove("hidden");
-    $("login-error").textContent = "Ошибка подключения: " + e.message;
+  } catch(e) {
+    if(loadingStatus) loadingStatus.textContent = "Ошибка загрузки: " + e.message;
   }
-});
-
-signInAnonymously(auth).catch((e) => {
-  $("loading-screen").classList.add("hidden");
-  $("login-screen").classList.remove("hidden");
-  $("login-error").textContent = "Не удалось подключиться к Firebase: " + e.message;
 });
 
 $("login-btn").onclick = async () => {
@@ -474,10 +476,9 @@ $("login-btn").onclick = async () => {
     return;
   }
   const user = auth.currentUser;
-  if(!user){ $("login-error").textContent = "Нет соединения, попробуйте ещё раз."; return; }
+  if(!user){ $("login-error").textContent = "Нет соединения с сервером."; return; }
 
-  // check username taken
-  try{
+  try {
     const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
     const q = query(collection(db,"users"), where("username","==",raw), limit(1));
     const takenSnap = await getDocs(q);
@@ -485,7 +486,7 @@ $("login-btn").onclick = async () => {
       $("login-error").textContent = "Этот юзернейм уже занят.";
       return;
     }
-  }catch(e){}
+  } catch(e){}
 
   const profile = { 
     username: raw, 
@@ -495,10 +496,16 @@ $("login-btn").onclick = async () => {
     lastUsernameChange: serverTimestamp(),
     createdAt: serverTimestamp() 
   };
-  await setDoc(doc(db,"users",user.uid), profile);
-  me = { uid: user.uid, ...profile };
-  enterApp();
+  
+  try {
+    await setDoc(doc(db,"users",user.uid), profile);
+    me = { uid: user.uid, ...profile };
+    enterApp();
+  } catch(e) {
+    $("login-error").textContent = "Не удалось создать профиль: " + e.message;
+  }
 };
+
 $("login-username").addEventListener("keydown", (e) => { if(e.key === "Enter") $("login-btn").click(); });
 
 function enterApp(){
@@ -512,7 +519,6 @@ function enterApp(){
 
 function renderMyProfile(){
   renderAvatar($("my-avatar"), me.nickname, me.avatar);
-  
   const verifiedBadge = me.isVerified ? '<span class="badge-verified" title="Официальная галочка">☑️</span>' : '';
   $("my-nickname").innerHTML = `${me.nickname}${verifiedBadge}`;
   $("my-username").textContent = "@" + me.username;
@@ -522,7 +528,7 @@ function renderMyProfile(){
   $("username-input").value = me.username;
 }
 
-// ---------- friends ----------
+// ---------- FRIENDS ----------
 function listenFriends(){
   if(unsubFriends) unsubFriends();
   const q = collection(db, "users", me.uid, "friends");
@@ -605,7 +611,6 @@ async function runFriendSearch(val){
     actions.style.display = "flex";
     actions.style.gap = "6px";
 
-    // Admin option for tamirlan_dev
     if (me.username === ADMIN_USERNAME) {
       const adminBtn = document.createElement("button");
       adminBtn.className = "btn";
@@ -640,7 +645,7 @@ async function runFriendSearch(val){
   });
 }
 
-// ---------- chat ----------
+// ---------- CHAT ----------
 function openChat(friend){
   activeFriend = friend;
   renderFriendList();
@@ -700,7 +705,7 @@ $("message-input").addEventListener("keydown", async (e) => {
   });
 });
 
-// ---------- settings ----------
+// ---------- SETTINGS ----------
 function openSettings(){ 
   $("nickname-input").value = me.nickname || "";
   $("username-input").value = me.username || "";
@@ -729,7 +734,6 @@ $("save-settings-btn").onclick = async () => {
 
   const updateData = { nickname: newNickname, avatar: me.avatar || null };
 
-  // Логика смены юзернейма и проверки на 7 дней
   if (newUsername !== me.username) {
     if(!/^[a-z0-9_.]{3,20}$/.test(newUsername)){
       $("username-error").textContent = "3-20 символов: латиница, цифры, _ .";
@@ -747,7 +751,6 @@ $("save-settings-btn").onclick = async () => {
       return;
     }
 
-    // Проверка занятости юзернейма
     try {
       const { getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
       const q = query(collection(db,"users"), where("username","==",newUsername), limit(1));
@@ -770,7 +773,7 @@ $("save-settings-btn").onclick = async () => {
   $("settings-overlay").classList.add("hidden");
 };
 
-// ================= CALLS (WebRTC + Firestore signaling) =================
+// ---------- WEBRTC / CALLS ----------
 const servers = { iceServers: [{ urls: ["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"] }] };
 let pc = null;
 let localStream = null;
@@ -1006,7 +1009,7 @@ $("toggle-share-btn").onclick = async () => {
       sharing = true;
       $("toggle-share-btn").classList.add("active");
       screenTrack.onended = () => stopShare(sender);
-    }catch(e){ /* user cancelled */ }
+    }catch(e){ /* cancelled */ }
   } else {
     const sender = pc.getSenders().find(s => s.track && s.track.kind === "video");
     stopShare(sender);
