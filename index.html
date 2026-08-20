@@ -106,7 +106,10 @@
   .avatar{border-radius:50%;position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:600;background:linear-gradient(135deg,#5865f2,#3b4bd6);overflow:hidden;}
   .avatar img{width:100%;height:100%;object-fit:cover;}
   .avatar.group-avatar{background:linear-gradient(135deg,#f0b232,#e08a1e);}
-  .verified-badge{color:#00a8fc;font-size:13px;flex-shrink:0;}
+  .verified-badge{
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+    width:15px;height:15px;border-radius:50%;background:#00a8fc;color:#fff;font-size:10px;font-weight:700;
+  }
 
   /* ---------- main chat ---------- */
   #main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-primary);min-height:0;}
@@ -372,7 +375,7 @@
   <div class="modal">
     <span class="modal-close" id="close-admin">✕</span>
     <h2>Админка</h2>
-    <div id="tabs" style="padding:0 0 10px;">
+    <div id="admin-tabs-row" style="padding:0 0 10px;display:flex;gap:6px;">
       <button class="tab-btn active" id="admin-tab-users">Пользователи</button>
       <button class="tab-btn" id="admin-tab-groups">Группы</button>
     </div>
@@ -927,9 +930,16 @@ $("message-input").addEventListener("keydown", async (e) => {
   }
 });
 
-// ---------- groups: create ----------
+// ---------- groups: create / add members (shared modal, mode-based) ----------
+let groupModalMode = "create"; // "create" | "add-members"
+
 function openCreateGroupModal(){
+  groupModalMode = "create";
+  $("create-group-overlay").querySelector("h2").textContent = "Создать группу";
+  $("create-group-overlay").querySelector("label.field-label").style.display = "";
+  $("group-name-input").style.display = "";
   $("group-name-input").value = "";
+  $("create-group-confirm-btn").textContent = "Создать";
   const picker = $("group-members-picker");
   picker.innerHTML = "";
   if(friends.length === 0){
@@ -945,21 +955,60 @@ function openCreateGroupModal(){
   $("create-group-overlay").classList.remove("hidden");
 }
 $("close-create-group").onclick = () => $("create-group-overlay").classList.add("hidden");
+
 $("create-group-confirm-btn").onclick = async () => {
-  const name = $("group-name-input").value.trim();
-  if(!name) return;
-  const selected = Array.from($("group-members-picker").querySelectorAll("input:checked")).map(i => i.value);
-  const groupRef = await addDoc(collection(db,"groups"), {
-    name, ownerId: me.uid, admins: [], members: [me.uid, ...selected],
-    verified: false, avatar: null, createdAt: serverTimestamp()
-  });
-  $("create-group-overlay").classList.add("hidden");
-  switchTab("groups");
+  const picker = $("group-members-picker");
+  const selected = Array.from(picker.querySelectorAll("input:checked")).map(i => i.value);
+
+  if(groupModalMode === "create"){
+    const name = $("group-name-input").value.trim();
+    if(!name) return;
+    const dupCheck = await getDocs(query(collection(db,"groups"), where("ownerId","==",me.uid), where("name","==",name), limit(1)));
+    if(!dupCheck.empty){
+      alert("У тебя уже есть группа с таким названием.");
+      return;
+    }
+    $("create-group-overlay").classList.add("hidden");
+    switchTab("groups");
+    await addDoc(collection(db,"groups"), {
+      name, ownerId: me.uid, admins: [], members: [me.uid, ...selected],
+      verified: false, avatar: null, createdAt: serverTimestamp()
+    });
+  } else {
+    if(selected.length && activeGroup){
+      await updateDoc(doc(db,"groups",activeGroup.id), { members: arrayUnion(...selected) });
+    }
+    $("create-group-overlay").classList.add("hidden");
+    setTimeout(openGroupManage, 300);
+  }
 };
 
 // ---------- group management ----------
 $("group-manage-btn").onclick = () => openGroupManage();
 $("close-group-manage").onclick = () => $("group-manage-overlay").classList.add("hidden");
+
+$("add-group-members-btn").onclick = () => {
+  if(!activeGroup) return;
+  groupModalMode = "add-members";
+  $("create-group-overlay").querySelector("h2").textContent = "Добавить участников";
+  $("create-group-overlay").querySelector("label.field-label").style.display = "none";
+  $("group-name-input").style.display = "none";
+  $("create-group-confirm-btn").textContent = "Добавить";
+  const picker = $("group-members-picker");
+  picker.innerHTML = "";
+  const nonMembers = friends.filter(f => !activeGroup.members.includes(f.uid));
+  if(nonMembers.length === 0){
+    picker.innerHTML = '<div class="empty-hint">Все друзья уже в группе</div>';
+  } else {
+    nonMembers.forEach(f => {
+      const row = document.createElement("label");
+      row.className = "checkbox-row";
+      row.innerHTML = `<input type="checkbox" value="${f.uid}" /><span>${escapeHtml(f.nickname)}</span>`;
+      picker.appendChild(row);
+    });
+  }
+  $("create-group-overlay").classList.remove("hidden");
+};
 
 async function openGroupManage(){
   if(!activeGroup) return;
@@ -998,42 +1047,6 @@ async function openGroupManage(){
     box.appendChild(row);
   });
 }
-$("add-group-members-btn").onclick = () => {
-  const picker = $("group-members-picker");
-  picker.innerHTML = "";
-  const nonMembers = friends.filter(f => !activeGroup.members.includes(f.uid));
-  if(nonMembers.length === 0){
-    picker.innerHTML = '<div class="empty-hint">Все друзья уже в группе</div>';
-  } else {
-    nonMembers.forEach(f => {
-      const row = document.createElement("label");
-      row.className = "checkbox-row";
-      row.innerHTML = `<input type="checkbox" value="${f.uid}" /><span>${escapeHtml(f.nickname)}</span>`;
-      picker.appendChild(row);
-    });
-  }
-  $("group-name-input").parentElement.querySelector("h2").textContent = "Добавить участников";
-  $("create-group-overlay").classList.remove("hidden");
-  $("group-name-input").parentElement.classList.add("adding-members-mode");
-  const originalHandler = $("create-group-confirm-btn").onclick;
-  $("create-group-confirm-btn").textContent = "Добавить";
-  $("create-group-confirm-btn").onclick = async () => {
-    const selected = Array.from(picker.querySelectorAll("input:checked")).map(i => i.value);
-    if(selected.length){
-      await updateDoc(doc(db,"groups",activeGroup.id), { members: arrayUnion(...selected) });
-    }
-    $("create-group-overlay").classList.add("hidden");
-    $("create-group-confirm-btn").textContent = "Создать";
-    $("group-name-input").parentElement.querySelector("h2").textContent = "Создать группу";
-    setTimeout(openGroupManage, 300);
-  };
-  $("group-name-input").closest(".modal").querySelector("label.field-label").style.display = "none";
-  $("group-name-input").style.display = "none";
-};
-$("close-create-group").addEventListener("click", () => {
-  $("group-name-input").style.display = "";
-  $("group-name-input").closest(".modal").querySelector("label.field-label").style.display = "";
-});
 
 // ---------- settings ----------
 function openSettings(){
@@ -1106,10 +1119,10 @@ $("save-settings-btn").onclick = async () => {
   }
 
   me.nickname = newNickname;
-  await updateDoc(doc(db,"users",me.uid), updates);
   renderMyProfile();
   if(activeGroup) renderChatHeader();
   $("settings-overlay").classList.add("hidden");
+  await updateDoc(doc(db,"users",me.uid), updates);
 };
 
 // ---------- admin panel ----------
@@ -1187,7 +1200,12 @@ async function runAdminSearch(val){
 }
 
 // ================= CALLS (WebRTC + Firestore signaling) =================
-const servers = { iceServers: [{ urls: ["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"] }] };
+const servers = { iceServers: [
+  { urls: ["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"] },
+  { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+] };
 let pc = null;
 let localStream = null;
 let currentCallId = null;
