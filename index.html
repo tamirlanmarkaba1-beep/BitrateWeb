@@ -2,26 +2,23 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Bitrate</title>
 <style>
   :root{
     --bg-tertiary:#1e1f22;
     --bg-secondary:#2b2d31;
-    --bg-secondary-alt:#2b2d31;
     --bg-primary:#313338;
     --bg-floating:#111214;
     --bg-input:#1e1f22;
     --bg-modifier-hover:rgba(78,80,88,.4);
     --text-normal:#dbdee1;
     --text-muted:#949ba4;
-    --text-link:#00a8fc;
     --blurple:#5865f2;
     --blurple-hover:#4752c4;
     --green:#23a55a;
     --yellow:#f0b232;
     --red:#f23f43;
-    --header-bg:#313338;
     --divider:#3f4147;
   }
   body.light{
@@ -43,7 +40,7 @@
     color:var(--text-normal);
     overflow:hidden;
   }
-  #app{display:flex;height:100vh;width:100vw;}
+  #app{display:flex;height:100vh;height:100dvh;width:100vw;}
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:#1a1b1e;border-radius:4px;}
   body.light ::-webkit-scrollbar-thumb{background:#c7c9cd;}
@@ -57,64 +54,70 @@
   .rail-btn{
     width:48px;height:48px;border-radius:50%;background:var(--bg-primary);
     display:flex;align-items:center;justify-content:center;cursor:pointer;
-    transition:.15s;color:var(--text-normal);border:none;
+    transition:.15s;color:var(--text-normal);border:none;position:relative;font-size:18px;flex-shrink:0;
   }
   .rail-btn.active,.rail-btn:hover{border-radius:16px;background:var(--blurple);color:#fff;}
-  .rail-sep{width:32px;height:2px;background:var(--divider);border-radius:1px;margin:4px 0;}
   .rail-spacer{flex:1;}
+  .rail-badge{
+    position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+    min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    padding:0 4px;border:2px solid var(--bg-tertiary);
+  }
 
-  /* ---------- friends sidebar ---------- */
-  #sidebar{width:240px;background:var(--bg-secondary);display:flex;flex-direction:column;flex-shrink:0;}
-  #search-bar{padding:10px;border-bottom:1px solid var(--divider);}
-  #search-bar input{
-    width:100%;background:var(--bg-input);border:none;border-radius:4px;
-    padding:6px 8px;color:var(--text-normal);font-size:13px;outline:none;
+  /* ---------- sidebar ---------- */
+  #sidebar{width:240px;background:var(--bg-secondary);display:flex;flex-direction:column;flex-shrink:0;min-height:0;}
+  #tabs{display:flex;padding:10px 10px 0;gap:6px;flex-shrink:0;}
+  .tab-btn{
+    flex:1;background:none;border:none;color:var(--text-muted);font-size:12px;font-weight:700;
+    text-transform:uppercase;padding:8px 4px;border-radius:6px;cursor:pointer;
   }
-  #friends-header{
-    padding:16px 10px 6px;font-size:11px;font-weight:700;color:var(--text-muted);
-    text-transform:uppercase;letter-spacing:.02em;display:flex;justify-content:space-between;align-items:center;
+  .tab-btn.active{color:var(--text-normal);background:var(--bg-modifier-hover);}
+  #list-header{
+    padding:12px 10px 6px;font-size:11px;font-weight:700;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:.02em;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;
   }
-  #add-friend-btn{
-    background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px;
-    display:flex;align-items:center;
+  #list-header button{
+    background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px;display:flex;align-items:center;font-size:16px;
   }
-  #add-friend-btn:hover{color:var(--text-normal);}
-  #friend-list{flex:1;overflow-y:auto;padding:0 6px;}
-  .friend-item{
+  #list-header button:hover{color:var(--text-normal);}
+  #item-list{flex:1;overflow-y:auto;padding:0 6px;min-height:0;}
+  .list-item{
     display:flex;align-items:center;gap:10px;padding:6px;border-radius:8px;
     cursor:pointer;margin-bottom:2px;position:relative;
   }
-  .friend-item:hover{background:var(--bg-modifier-hover);}
-  .friend-item.active{background:var(--bg-modifier-hover);}
-  .friend-name{font-size:14px;font-weight:500;color:var(--text-normal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
-  .friend-status{font-size:12px;color:var(--text-muted);}
+  .list-item:hover{background:var(--bg-modifier-hover);}
+  .list-item.active{background:var(--bg-modifier-hover);}
+  .item-name{font-size:14px;font-weight:500;color:var(--text-normal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
+  .item-sub{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .empty-hint{padding:16px;font-size:12px;color:var(--text-muted);text-align:center;}
 
   #user-bar{
     background:var(--bg-secondary);border-top:1px solid var(--divider);
-    padding:8px;display:flex;align-items:center;gap:8px;
+    padding:8px;display:flex;align-items:center;gap:8px;flex-shrink:0;cursor:pointer;
   }
+  #user-bar:hover{background:var(--bg-modifier-hover);}
   .user-bar-info{flex:1;min-width:0;}
   .user-bar-name{font-size:13px;font-weight:600;color:var(--text-normal);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px;}
   .user-bar-tag{font-size:11px;color:var(--text-muted);}
-  .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;border-radius:4px;display:flex;}
+  .icon-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:6px;border-radius:4px;display:flex;flex-shrink:0;}
   .icon-btn:hover{color:var(--text-normal);background:var(--bg-modifier-hover);}
 
-  /* ---------- avatar ---------- */
+  /* ---------- avatar / badge ---------- */
   .avatar{border-radius:50%;position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:600;background:linear-gradient(135deg,#5865f2,#3b4bd6);overflow:hidden;}
   .avatar img{width:100%;height:100%;object-fit:cover;}
-  .status-dot{position:absolute;bottom:-1px;right:-1px;border-radius:50%;border:3px solid var(--bg-secondary);}
+  .avatar.group-avatar{background:linear-gradient(135deg,#f0b232,#e08a1e);}
+  .verified-badge{color:#00a8fc;font-size:13px;flex-shrink:0;}
 
   /* ---------- main chat ---------- */
-  #main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-primary);}
+  #main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg-primary);min-height:0;}
   #chat-header{
     height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
     padding:0 16px;border-bottom:1px solid var(--divider);box-shadow:0 1px 0 rgba(0,0,0,.1);
   }
-  .header-left{display:flex;align-items:center;gap:8px;font-weight:600;}
-  .header-right{display:flex;align-items:center;gap:16px;}
+  .header-left{display:flex;align-items:center;gap:8px;font-weight:600;min-width:0;}
+  .header-right{display:flex;align-items:center;gap:16px;flex-shrink:0;}
   .header-right .icon-btn{color:var(--text-muted);}
-  #messages{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:2px;}
+  #messages{flex:1;overflow-y:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:2px;min-height:0;}
   .msg-row{display:flex;gap:12px;padding:6px 0;border-radius:6px;}
   .msg-row:hover{background:var(--bg-modifier-hover);}
   .msg-body{flex:1;min-width:0;}
@@ -129,41 +132,53 @@
     flex:1;background:none;border:none;outline:none;color:var(--text-normal);
     padding:11px 8px;font-size:15px;
   }
+  .composer-box input:disabled{color:var(--text-muted);}
+  #composer-lock-hint{font-size:12px;color:var(--text-muted);padding:6px 4px 0;text-align:center;}
   #no-chat{margin:auto;color:var(--text-muted);text-align:center;}
 
   /* ---------- modals ---------- */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
   .hidden{display:none !important;}
-  .modal{background:var(--bg-floating);border-radius:8px;width:440px;max-width:90vw;padding:16px;}
+  .modal{background:var(--bg-floating);border-radius:8px;width:440px;max-width:100%;max-height:85vh;overflow-y:auto;padding:16px;position:relative;}
   .modal h2{margin:0 0 4px;font-size:20px;}
   .modal p.sub{color:var(--text-muted);font-size:14px;margin:0 0 16px;}
   .field-label{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;display:block;}
   .field-input{
     width:100%;background:var(--bg-input);border:none;border-radius:4px;
-    padding:10px;color:var(--text-normal);font-size:15px;outline:none;margin-bottom:14px;
+    padding:10px;color:var(--text-normal);font-size:15px;outline:none;margin-bottom:6px;
   }
+  .field-hint{font-size:12px;color:var(--text-muted);margin-bottom:14px;}
+  .field-hint.error{color:var(--red);}
   .btn{
     background:var(--blurple);color:#fff;border:none;border-radius:4px;
     padding:10px 18px;font-size:14px;font-weight:500;cursor:pointer;
   }
   .btn:hover{background:var(--blurple-hover);}
   .btn:disabled{opacity:.5;cursor:default;}
+  .btn-sm{padding:6px 12px;font-size:12px;}
   .btn-secondary{background:none;color:var(--text-normal);}
   .btn-secondary:hover{text-decoration:underline;background:none;}
-  .modal-close{position:absolute;cursor:pointer;color:var(--text-muted);}
+  .btn-danger{background:var(--red);}
+  .btn-danger:hover{background:#c9333a;}
+  .modal-close{position:absolute;top:16px;right:16px;cursor:pointer;color:var(--text-muted);}
   .modal-row{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}
   .search-result{display:flex;align-items:center;gap:10px;padding:8px;border-radius:6px;}
   .search-result:hover{background:var(--bg-modifier-hover);}
   .search-result-info{flex:1;min-width:0;}
   .search-results{max-height:240px;overflow-y:auto;margin-top:4px;}
   .toast{margin-top:10px;color:var(--green);font-size:13px;}
+  .member-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:6px;}
+  .member-row:hover{background:var(--bg-modifier-hover);}
+  .member-role{font-size:11px;color:var(--text-muted);}
+  .checkbox-row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;}
+  .checkbox-row:hover{background:var(--bg-modifier-hover);}
 
   /* settings */
   .toggle{width:40px;height:22px;border-radius:11px;background:#80848e;position:relative;cursor:pointer;border:none;flex-shrink:0;}
   .toggle.on{background:var(--green);}
   .toggle .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;}
   .toggle.on .knob{left:20px;}
-  .settings-row{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg-input);padding:10px 12px;border-radius:6px;margin-bottom:10px;}
+  .settings-row{display:flex;align-items:center;gap:8px;background:var(--bg-input);padding:10px 12px;border-radius:6px;margin-bottom:10px;}
   .settings-row-label{flex:1;font-size:14px;}
   .avatar-upload-wrap{position:relative;width:80px;height:80px;margin:0 auto 6px;}
   .avatar-upload-btn{
@@ -183,14 +198,13 @@
     overflow:hidden;border:2px solid var(--blurple);background:#000;
   }
   #local-video{width:100%;height:100%;object-fit:cover;}
-  #call-controls{display:flex;justify-content:center;gap:16px;padding:24px 0 40px;}
+  #call-controls{display:flex;justify-content:center;gap:16px;padding:24px 0 40px;flex-shrink:0;}
   .call-btn{
     width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
     display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;background:#3a3d44;
   }
   .call-btn.active{background:var(--blurple);}
   .call-btn.end{background:var(--red);}
-  .call-btn.danger-toggle{background:var(--red);}
   #incoming-call{
     position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:300;
     background:var(--bg-floating);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;
@@ -204,12 +218,13 @@
   #login-screen{
     position:fixed;inset:0;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;z-index:500;
   }
-  #login-box{background:var(--bg-floating);border-radius:8px;padding:32px;width:400px;max-width:90vw;text-align:left;}
-  #login-box h1{margin:0 0 8px;font-size:24px;text-align:center;}
-  #login-box p{color:var(--text-muted);font-size:14px;margin:0 0 20px;text-align:center;}
-  .auth-switch{text-align:center;font-size:13px;color:var(--text-muted);margin-top:14px;}
-  .auth-switch span{color:var(--text-link);cursor:pointer;}
-  .auth-switch span:hover{text-decoration:underline;}
+  #login-box{background:var(--bg-floating);border-radius:8px;padding:32px;width:400px;max-width:90vw;text-align:center;}
+  #login-box h1{margin:0 0 8px;font-size:24px;}
+  #login-box p{color:var(--text-muted);font-size:14px;margin:0 0 20px;}
+  #loading-screen{
+    position:fixed;inset:0;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;
+    z-index:500;color:var(--text-muted);font-size:14px;
+  }
 
   /* ---------- missed call ---------- */
   #call-missed{
@@ -219,15 +234,11 @@
   }
   #call-missed .btn{margin:0 4px;}
 
-  /* ---------- badge ---------- */
-  .badge-verified{color:#5865f2;margin-left:2px;font-size:14px;}
-
   /* ---------- mobile ---------- */
   #back-to-friends-btn{display:none;}
   @media (max-width:768px){
     #rail{width:56px;}
-    #sidebar{width:100%;flex:1;display:flex;flex-direction:column;}
-    #user-bar{display:flex !important;}
+    #sidebar{width:100%;flex:1;}
     #app.chat-open #sidebar,
     #app.chat-open #rail{display:none;}
     #app:not(.chat-open) #main{display:none;}
@@ -239,58 +250,50 @@
 </head>
 <body>
 
-<div id="loading-screen" style="position:fixed;inset:0;background:#1e1f22;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#949ba4;font-size:16px;">
-  <div style="font-size:20px;font-weight:600;margin-bottom:8px;color:#dbdee1;">Bitrate</div>
-  <div id="loading-status">Подключение к сети...</div>
-</div>
+<div id="loading-screen">Загрузка...</div>
 
 <div id="login-screen" class="hidden">
   <div id="login-box">
-    <h1 id="auth-title">Вход в Bitrate</h1>
-    <p id="auth-subtitle">С возвращением! Мы так скучали!</p>
-    
-    <label class="field-label">Юзернейм</label>
+    <h1>Bitrate</h1>
+    <p>Придумай юзернейм, чтобы друзья могли тебя найти.</p>
     <input id="login-username" class="field-input" placeholder="ваш_юзернейм" autocomplete="off" />
-    
-    <label class="field-label">Пароль</label>
-    <input id="login-password" type="password" class="field-input" placeholder="Ваш пароль" autocomplete="off" />
-
     <div id="login-error" style="color:#f23f43;font-size:13px;margin-bottom:10px;min-height:16px;"></div>
-    
-    <button class="btn" id="login-btn" style="width:100%;">Войти</button>
-    
-    <div class="auth-switch" id="auth-switch-text">
-      Нужен аккаунт? <span id="toggle-auth-mode">Зарегистрироваться</span>
-    </div>
+    <button class="btn" id="login-btn" style="width:100%;">Продолжить</button>
   </div>
 </div>
 
 <div id="app" class="hidden">
   <div id="rail">
-    <button class="rail-btn active" title="Личные сообщения">💬</button>
+    <button class="rail-btn active" id="tab-dm-rail-btn" title="Личные сообщения">💬</button>
+    <button class="rail-btn" id="notifications-btn" title="Уведомления">
+      🔔<span class="rail-badge hidden" id="notif-badge">0</span>
+    </button>
+    <button class="rail-btn hidden" id="admin-btn" title="Админка">🛡️</button>
     <div class="rail-spacer"></div>
-    <button class="rail-btn" id="logout-btn" title="Выйти из аккаунта" style="font-size:18px;">🚪</button>
   </div>
 
   <div id="sidebar">
-    <div id="search-bar"><input placeholder="Найти или начать диалог" disabled /></div>
-    <div id="friends-header">
-      <span>Личные сообщения</span>
-      <button id="add-friend-btn" title="Добавить друга">➕</button>
+    <div id="tabs">
+      <button class="tab-btn active" id="tab-friends-btn">Друзья</button>
+      <button class="tab-btn" id="tab-groups-btn">Группы</button>
     </div>
-    <div id="friend-list"></div>
+    <div id="list-header">
+      <span id="list-header-title">Личные сообщения</span>
+      <button id="list-add-btn" title="Добавить">➕</button>
+    </div>
+    <div id="item-list"></div>
     <div id="user-bar">
       <div class="avatar" id="my-avatar" style="width:32px;height:32px;font-size:13px;"></div>
       <div class="user-bar-info">
         <div class="user-bar-name" id="my-nickname"></div>
         <div class="user-bar-tag" id="my-username"></div>
       </div>
-      <button class="icon-btn" id="settings-btn-bar" title="Настройки">⚙️</button>
+      <span class="icon-btn" title="Настройки">⚙️</span>
     </div>
   </div>
 
   <div id="main">
-    <div id="no-chat">Выбери друга слева, чтобы начать переписку</div>
+    <div id="no-chat">Выбери друга или группу слева</div>
     <div id="chat-view" class="hidden" style="display:flex;flex-direction:column;height:100%;">
       <div id="chat-header">
         <div class="header-left">
@@ -299,6 +302,7 @@
           <span id="chat-title"></span>
         </div>
         <div class="header-right">
+          <button class="icon-btn hidden" id="group-manage-btn" title="Управление группой">⚙️</button>
           <button class="icon-btn" id="call-audio-btn" title="Аудиозвонок">📞</button>
           <button class="icon-btn" id="call-video-btn" title="Видеозвонок">🎥</button>
         </div>
@@ -308,6 +312,7 @@
         <div class="composer-box">
           <input id="message-input" placeholder="Написать сообщение..." autocomplete="off" />
         </div>
+        <div id="composer-lock-hint" class="hidden">Только владелец и админы группы могут писать сообщения</div>
       </div>
     </div>
   </div>
@@ -315,32 +320,83 @@
 
 <!-- Add friend modal -->
 <div class="overlay hidden" id="add-friend-overlay">
-  <div class="modal" style="position:relative;">
-    <span class="modal-close" id="close-add-friend" style="top:16px;right:16px;">✕</span>
+  <div class="modal">
+    <span class="modal-close" id="close-add-friend">✕</span>
     <h2>Добавить друга</h2>
-    <p class="sub">Можно добавить по юзернейму.</p>
+    <p class="sub">Отправь заявку в друзья по юзернейму.</p>
     <input class="field-input" id="friend-search-input" placeholder="Введите юзернейм" autocomplete="off" />
     <div class="search-results" id="friend-search-results"></div>
     <div class="toast hidden" id="add-friend-toast"></div>
   </div>
 </div>
 
+<!-- Notifications / friend requests modal -->
+<div class="overlay hidden" id="notif-overlay">
+  <div class="modal">
+    <span class="modal-close" id="close-notif">✕</span>
+    <h2>Заявки в друзья</h2>
+    <div id="requests-list"></div>
+  </div>
+</div>
+
+<!-- Create group modal -->
+<div class="overlay hidden" id="create-group-overlay">
+  <div class="modal">
+    <span class="modal-close" id="close-create-group">✕</span>
+    <h2>Создать группу</h2>
+    <label class="field-label">Название</label>
+    <input class="field-input" id="group-name-input" placeholder="Название группы" style="margin-bottom:14px;" />
+    <label class="field-label">Участники</label>
+    <div id="group-members-picker" style="max-height:200px;overflow-y:auto;margin-bottom:14px;"></div>
+    <div class="modal-row">
+      <button class="btn" id="create-group-confirm-btn">Создать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Group management modal -->
+<div class="overlay hidden" id="group-manage-overlay">
+  <div class="modal">
+    <span class="modal-close" id="close-group-manage">✕</span>
+    <h2 id="group-manage-title">Управление группой</h2>
+    <p class="sub">Владелец и админы могут писать сообщения. Владелец может назначать админов.</p>
+    <div id="group-members-list"></div>
+    <div class="modal-row">
+      <button class="btn btn-secondary" id="add-group-members-btn">➕ Добавить участников</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin panel -->
+<div class="overlay hidden" id="admin-overlay">
+  <div class="modal">
+    <span class="modal-close" id="close-admin">✕</span>
+    <h2>Админка</h2>
+    <div id="tabs" style="padding:0 0 10px;">
+      <button class="tab-btn active" id="admin-tab-users">Пользователи</button>
+      <button class="tab-btn" id="admin-tab-groups">Группы</button>
+    </div>
+    <input class="field-input" id="admin-search-input" placeholder="Поиск..." autocomplete="off" />
+    <div class="search-results" id="admin-results"></div>
+  </div>
+</div>
+
 <!-- Settings modal -->
 <div class="overlay hidden" id="settings-overlay">
-  <div class="modal" style="position:relative;">
-    <span class="modal-close" id="close-settings" style="top:16px;right:16px;">✕</span>
+  <div class="modal">
+    <span class="modal-close" id="close-settings">✕</span>
     <h2>Настройки профиля</h2>
     <div class="avatar-upload-wrap">
       <div class="avatar" id="settings-avatar" style="width:80px;height:80px;font-size:28px;"></div>
       <label class="avatar-upload-btn">📷<input type="file" id="avatar-input" accept="image/*" style="display:none;" /></label>
     </div>
 
-    <label class="field-label" style="margin-top:10px;">Никнейм</label>
-    <input class="field-input" id="nickname-input" placeholder="Ваше отображаемое имя" />
+    <label class="field-label">Никнейм</label>
+    <input class="field-input" id="nickname-input" style="margin-bottom:14px;" />
 
-    <label class="field-label">Юзернейм (раз в 7 дней)</label>
-    <input class="field-input" id="username-input" placeholder="ваш_юзернейм" />
-    <div id="username-error" style="color:var(--red);font-size:12px;margin-top:-10px;margin-bottom:10px;" class="hidden"></div>
+    <label class="field-label">Юзернейм</label>
+    <input class="field-input" id="username-input" />
+    <div class="field-hint" id="username-hint">3-20 символов: латиница, цифры, _ .</div>
 
     <div class="settings-row">
       <span class="settings-row-label">🌙 Светлая тема</span>
@@ -396,13 +452,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore, doc, setDoc, getDoc, updateDoc, addDoc, collection,
-  query, where, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, getDocs
+  query, where, orderBy, limit, onSnapshot, serverTimestamp, deleteDoc, getDocs, arrayUnion, arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import {
-  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut
+  getAuth, signInAnonymously, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// ---------- FIREBASE CONFIG ----------
+// ---------- YOUR FIREBASE CONFIG ----------
 const firebaseConfig = {
   apiKey: "AIzaSyD0U_7IJTQS_Lo6vMVp4l4_wIYlvxeG8Rg",
   authDomain: "bitrate-71684.firebaseapp.com",
@@ -417,19 +473,25 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+const ADMIN_USERNAME = "tamirlan_dev";
+const USERNAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+
 // ---------- state ----------
 let me = null;
 let friends = [];
+let groups = [];
 let activeFriend = null;
+let activeGroup = null;
+let activeTab = "friends"; // friends | groups
 let unsubMessages = null;
 let unsubFriends = null;
+let unsubGroups = null;
 let unsubIncoming = null;
 let unsubCallDoc = null;
-let isRegisterMode = false;
+let unsubRequests = null;
 let theme = localStorage.getItem("bitrate-theme") || "dark";
 
-const ADMIN_USERNAME = "tamirlan_dev";
-
+// ---------- helpers ----------
 function $(id){ return document.getElementById(id); }
 function initials(name){ return (name||"?").slice(0,2).toUpperCase(); }
 function pairId(a,b){ return [a,b].sort().join("_"); }
@@ -437,15 +499,19 @@ function fmtTime(ts){
   const d = ts?.toDate ? ts.toDate() : new Date();
   return d.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
 }
-function renderAvatar(el, name, avatarUrl){
+function renderAvatar(el, name, avatarUrl, isGroup){
   el.innerHTML = "";
+  el.classList.toggle("group-avatar", !!isGroup);
   if(avatarUrl){
     const img = document.createElement("img");
     img.src = avatarUrl;
     el.appendChild(img);
   } else {
-    el.textContent = initials(name);
+    el.textContent = isGroup ? "#" : initials(name);
   }
+}
+function verifiedBadge(isVerified){
+  return isVerified ? '<span class="verified-badge" title="Подтверждённый">✔</span>' : "";
 }
 function applyTheme(){
   document.body.classList.toggle("light", theme === "light");
@@ -454,28 +520,12 @@ function applyTheme(){
 }
 function toggleTheme(){ theme = theme === "light" ? "dark" : "light"; applyTheme(); }
 
-// ---------- AUTH LOGIC ----------
-const loadingStatus = $("loading-status");
-
-// Преобразование юзернейма в служебный Email для Firebase Auth
-function usernameToEmail(username) {
-  return `${username}@bitrate.app`;
-}
-
+// ---------- auth / login ----------
 onAuthStateChanged(auth, async (user) => {
-  if(!user){
-    $("loading-screen").classList.add("hidden");
-    $("login-screen").classList.remove("hidden");
-    $("app").classList.add("hidden");
-    me = null;
-    return;
-  }
-  
-  try {
-    if(loadingStatus) loadingStatus.textContent = "Синхронизация профиля...";
+  if(!user) return;
+  try{
     const userDoc = await getDoc(doc(db, "users", user.uid));
     $("loading-screen").classList.add("hidden");
-    
     if(userDoc.exists()){
       me = { uid: user.uid, ...userDoc.data() };
       enterApp();
@@ -483,99 +533,46 @@ onAuthStateChanged(auth, async (user) => {
       $("login-screen").classList.remove("hidden");
       $("app").classList.add("hidden");
     }
-  } catch(e) {
-    if(loadingStatus) loadingStatus.textContent = "Ошибка загрузки: " + e.message;
+  }catch(e){
+    $("loading-screen").classList.add("hidden");
+    $("login-screen").classList.remove("hidden");
+    $("login-error").textContent = "Ошибка подключения: " + e.message;
   }
 });
 
-// Переключение Регистрация / Вход
-$("toggle-auth-mode").onclick = () => {
-  isRegisterMode = !isRegisterMode;
-  $("login-error").textContent = "";
-  if (isRegisterMode) {
-    $("auth-title").textContent = "Создать аккаунт";
-    $("auth-subtitle").textContent = "Добро пожаловать! Введите данные для регистрации.";
-    $("login-btn").textContent = "Зарегистрироваться";
-    $("auth-switch-text").innerHTML = 'Уже есть аккаунт? <span id="toggle-auth-mode">Войти</span>';
-  } else {
-    $("auth-title").textContent = "Вход в Bitrate";
-    $("auth-subtitle").textContent = "С возвращением! Мы так скучали!";
-    $("login-btn").textContent = "Войти";
-    $("auth-switch-text").innerHTML = 'Нужен аккаунт? <span id="toggle-auth-mode">Зарегистрироваться</span>';
-  }
-  $("toggle-auth-mode").onclick = $("toggle-auth-mode").parentElement.querySelector('span').onclick = arguments.callee;
-};
+signInAnonymously(auth).catch((e) => {
+  $("loading-screen").classList.add("hidden");
+  $("login-screen").classList.remove("hidden");
+  $("login-error").textContent = "Не удалось подключиться к Firebase: " + e.message;
+});
 
-// Вход / Регистрация по кнопке
+function validUsername(v){ return /^[a-z0-9_.]{3,20}$/.test(v); }
+
 $("login-btn").onclick = async () => {
-  const rawUsername = $("login-username").value.trim().toLowerCase();
-  const password = $("login-password").value;
+  const raw = $("login-username").value.trim().toLowerCase();
   $("login-error").textContent = "";
-
-  if (!/^[a-z0-9_.]{3,20}$/.test(rawUsername)) {
-    $("login-error").textContent = "Юзернейм: 3-20 символов (латиница, цифры, _ .)";
+  if(!validUsername(raw)){
+    $("login-error").textContent = "3-20 символов: латиница, цифры, _ .";
     return;
   }
-  if (!password || password.length < 6) {
-    $("login-error").textContent = "Пароль должен быть не менее 6 символов.";
-    return;
-  }
+  const user = auth.currentUser;
+  if(!user){ $("login-error").textContent = "Нет соединения, попробуйте ещё раз."; return; }
 
-  const fakeEmail = usernameToEmail(rawUsername);
-
-  if (isRegisterMode) {
-    // РЕГИСТРАЦИЯ
-    try {
-      const q = query(collection(db, "users"), where("username", "==", rawUsername), limit(1));
-      const takenSnap = await getDocs(q);
-      if (!takenSnap.empty) {
-        $("login-error").textContent = "Этот юзернейм уже занят.";
-        return;
-      }
-
-      const res = await createUserWithEmailAndPassword(auth, fakeEmail, password);
-      const profile = {
-        username: rawUsername,
-        nickname: rawUsername,
-        avatar: null,
-        isVerified: rawUsername === ADMIN_USERNAME,
-        lastUsernameChange: serverTimestamp(),
-        createdAt: serverTimestamp()
-      };
-
-      await setDoc(doc(db, "users", res.user.uid), profile);
-      me = { uid: res.user.uid, ...profile };
-      enterApp();
-    } catch (e) {
-      if (e.code === 'auth/email-already-in-use') {
-        $("login-error").textContent = "Этот юзернейм уже зарегистрирован.";
-      } else {
-        $("login-error").textContent = "Ошибка регистрации: " + e.message;
-      }
+  try{
+    const q = query(collection(db,"users"), where("username","==",raw), limit(1));
+    const takenSnap = await getDocs(q);
+    if(!takenSnap.empty && takenSnap.docs[0].id !== user.uid){
+      $("login-error").textContent = "Этот юзернейм уже занят.";
+      return;
     }
-  } else {
-    // ВХОД
-    try {
-      await signInWithEmailAndPassword(auth, fakeEmail, password);
-    } catch (e) {
-      if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
-        $("login-error").textContent = "Неверный юзернейм или пароль.";
-      } else {
-        $("login-error").textContent = "Ошибка входа: " + e.message;
-      }
-    }
-  }
-};
+  }catch(e){}
 
-$("login-password").addEventListener("keydown", (e) => { if(e.key === "Enter") $("login-btn").click(); });
-
-// Кнопка выхода из аккаунта
-$("logout-btn").onclick = () => {
-  if (confirm("Вы действительно хотите выйти из аккаунта?")) {
-    teardownCall();
-    signOut(auth);
-  }
+  const profile = { username: raw, nickname: raw, avatar: null, verified: false, usernameChangedAt: null, createdAt: serverTimestamp() };
+  await setDoc(doc(db,"users",user.uid), profile);
+  me = { uid: user.uid, ...profile };
+  enterApp();
 };
+$("login-username").addEventListener("keydown", (e) => { if(e.key === "Enter") $("login-btn").click(); });
 
 function enterApp(){
   $("login-screen").classList.add("hidden");
@@ -583,55 +580,108 @@ function enterApp(){
   applyTheme();
   renderMyProfile();
   listenFriends();
+  listenGroups();
   listenIncomingCalls();
+  listenFriendRequests();
+  $("admin-btn").classList.toggle("hidden", me.username !== ADMIN_USERNAME);
 }
 
 function renderMyProfile(){
   renderAvatar($("my-avatar"), me.nickname, me.avatar);
-  const verifiedBadge = me.isVerified ? '<span class="badge-verified" title="Официальная галочка">☑️</span>' : '';
-  $("my-nickname").innerHTML = `${me.nickname}${verifiedBadge}`;
+  $("my-nickname").innerHTML = escapeHtml(me.nickname) + " " + verifiedBadge(me.verified);
   $("my-username").textContent = "@" + me.username;
-  
-  renderAvatar($("settings-avatar"), me.nickname, me.avatar);
-  $("nickname-input").value = me.nickname;
-  $("username-input").value = me.username;
+}
+function escapeHtml(s){
+  const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML;
 }
 
-// ---------- FRIENDS ----------
+// ---------- tabs ----------
+$("tab-friends-btn").onclick = () => switchTab("friends");
+$("tab-groups-btn").onclick = () => switchTab("groups");
+$("tab-dm-rail-btn").onclick = () => switchTab("friends");
+
+function switchTab(tab){
+  activeTab = tab;
+  $("tab-friends-btn").classList.toggle("active", tab === "friends");
+  $("tab-groups-btn").classList.toggle("active", tab === "groups");
+  $("list-header-title").textContent = tab === "friends" ? "Личные сообщения" : "Группы";
+  $("list-add-btn").title = tab === "friends" ? "Добавить друга" : "Создать группу";
+  renderList();
+}
+$("list-add-btn").onclick = () => {
+  if(activeTab === "friends"){
+    $("add-friend-overlay").classList.remove("hidden");
+    $("friend-search-input").focus();
+  } else {
+    openCreateGroupModal();
+  }
+};
+
+// ---------- friends ----------
 function listenFriends(){
   if(unsubFriends) unsubFriends();
   const q = collection(db, "users", me.uid, "friends");
   unsubFriends = onSnapshot(q, (snap) => {
     friends = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-    renderFriendList();
+    if(activeTab === "friends") renderList();
   });
 }
 
-function renderFriendList(){
-  const list = $("friend-list");
-  list.innerHTML = "";
-  if(friends.length === 0){
-    list.innerHTML = '<div class="empty-hint">Пока никого нет.<br>Нажми ➕ и найди друга по юзернейму.</div>';
-    return;
+function listenGroups(){
+  if(unsubGroups) unsubGroups();
+  const q = query(collection(db,"groups"), where("members","array-contains",me.uid));
+  unsubGroups = onSnapshot(q, (snap) => {
+    groups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if(activeTab === "groups") renderList();
+    if(activeGroup){
+      const updated = groups.find(g => g.id === activeGroup.id);
+      if(updated){ activeGroup = updated; renderChatHeader(); renderComposerLock(); }
+    }
+  });
+}
+
+function renderList(){
+  const box = $("item-list");
+  box.innerHTML = "";
+  if(activeTab === "friends"){
+    if(friends.length === 0){
+      box.innerHTML = '<div class="empty-hint">Пока никого нет.<br>Нажми ➕ и отправь заявку по юзернейму.</div>';
+      return;
+    }
+    friends.forEach(f => {
+      const item = document.createElement("div");
+      item.className = "list-item" + (activeFriend?.uid === f.uid ? " active" : "");
+      const av = document.createElement("div");
+      av.className = "avatar"; av.style.width="32px"; av.style.height="32px"; av.style.fontSize="13px";
+      renderAvatar(av, f.nickname, f.avatar);
+      const info = document.createElement("div");
+      info.style.minWidth = "0"; info.style.flex = "1";
+      info.innerHTML = `<div class="item-name">${escapeHtml(f.nickname)} ${verifiedBadge(f.verified)}</div><div class="item-sub">@${escapeHtml(f.username)}</div>`;
+      item.appendChild(av); item.appendChild(info);
+      item.onclick = () => openChat(f);
+      box.appendChild(item);
+    });
+  } else {
+    if(groups.length === 0){
+      box.innerHTML = '<div class="empty-hint">Пока нет групп.<br>Нажми ➕ чтобы создать.</div>';
+      return;
+    }
+    groups.forEach(g => {
+      const item = document.createElement("div");
+      item.className = "list-item" + (activeGroup?.id === g.id ? " active" : "");
+      const av = document.createElement("div");
+      av.className = "avatar"; av.style.width="32px"; av.style.height="32px"; av.style.fontSize="13px";
+      renderAvatar(av, g.name, g.avatar, true);
+      const info = document.createElement("div");
+      info.style.minWidth = "0"; info.style.flex = "1";
+      info.innerHTML = `<div class="item-name">${escapeHtml(g.name)} ${verifiedBadge(g.verified)}</div><div class="item-sub">${g.members.length} участников</div>`;
+      item.appendChild(av); item.appendChild(info);
+      item.onclick = () => openGroup(g);
+      box.appendChild(item);
+    });
   }
-  friends.forEach(f => {
-    const item = document.createElement("div");
-    item.className = "friend-item" + (activeFriend?.uid === f.uid ? " active" : "");
-    const av = document.createElement("div");
-    av.className = "avatar";
-    av.style.width = "32px"; av.style.height = "32px"; av.style.fontSize = "13px";
-    renderAvatar(av, f.nickname, f.avatar);
-    const info = document.createElement("div");
-    info.style.minWidth = "0"; info.style.flex = "1";
-    const verifiedBadge = f.isVerified ? '<span class="badge-verified">☑️</span>' : '';
-    info.innerHTML = `<div class="friend-name">${f.nickname}${verifiedBadge}</div><div class="friend-status">@${f.username}</div>`;
-    item.appendChild(av); item.appendChild(info);
-    item.onclick = () => openChat(f);
-    list.appendChild(item);
-  });
 }
 
-$("add-friend-btn").onclick = () => { $("add-friend-overlay").classList.remove("hidden"); $("friend-search-input").focus(); };
 $("close-add-friend").onclick = () => { $("add-friend-overlay").classList.add("hidden"); $("friend-search-input").value=""; $("friend-search-results").innerHTML=""; };
 $("back-to-friends-btn").onclick = () => { $("app").classList.remove("chat-open"); };
 
@@ -664,7 +714,7 @@ async function runFriendSearch(val){
     box.innerHTML = '<div class="empty-hint">Никого не найдено</div>';
     return;
   }
-  results.forEach(u => {
+  for(const u of results){
     const row = document.createElement("div");
     row.className = "search-result";
     const av = document.createElement("div");
@@ -672,89 +722,188 @@ async function runFriendSearch(val){
     renderAvatar(av, u.nickname, u.avatar);
     const info = document.createElement("div");
     info.className = "search-result-info";
-    const verifiedBadge = u.isVerified ? '<span class="badge-verified">☑️</span>' : '';
-    info.innerHTML = `<div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:4px;">${u.nickname}${verifiedBadge}</div><div style="font-size:12px;color:var(--text-muted);">@${u.username}</div>`;
-    
-    const actions = document.createElement("div");
-    actions.style.display = "flex";
-    actions.style.gap = "6px";
-
-    if (me.username === ADMIN_USERNAME) {
-      const adminBtn = document.createElement("button");
-      adminBtn.className = "btn";
-      adminBtn.style.padding = "6px 10px";
-      adminBtn.style.fontSize = "12px";
-      adminBtn.style.background = u.isVerified ? "var(--red)" : "var(--green)";
-      adminBtn.textContent = u.isVerified ? "Забрать ☑️" : "Дать ☑️";
-      adminBtn.onclick = async () => {
-        const newStatus = !u.isVerified;
-        await updateDoc(doc(db, "users", u.uid), { isVerified: newStatus });
-        u.isVerified = newStatus;
-        runFriendSearch(val);
-      };
-      actions.appendChild(adminBtn);
-    }
-
+    info.innerHTML = `<div style="font-weight:600;font-size:14px;">${escapeHtml(u.nickname)} ${verifiedBadge(u.verified)}</div><div style="font-size:12px;color:var(--text-muted);">@${escapeHtml(u.username)}</div>`;
     const btn = document.createElement("button");
-    btn.className = "btn"; btn.textContent = "Добавить"; btn.style.padding="6px 12px"; btn.style.fontSize="12px";
-    btn.onclick = async () => {
-      await setDoc(doc(db,"users",me.uid,"friends",u.uid), {
-        username: u.username, nickname: u.nickname, avatar: u.avatar || null, isVerified: !!u.isVerified, addedAt: serverTimestamp()
-      });
-      $("add-friend-toast").textContent = `${u.username} добавлен в друзья`;
-      $("add-friend-toast").classList.remove("hidden");
-      setTimeout(() => $("add-friend-toast").classList.add("hidden"), 2000);
-      runFriendSearch(val);
-    };
-    actions.appendChild(btn);
+    btn.className = "btn btn-sm";
 
-    row.appendChild(av); row.appendChild(info); row.appendChild(actions);
+    const existingReq = await getDocs(query(collection(db,"friendRequests"),
+      where("from","==",me.uid), where("to","==",u.uid), where("status","==","pending"), limit(1)));
+    if(!existingReq.empty){
+      btn.textContent = "Заявка отправлена";
+      btn.disabled = true;
+    } else {
+      btn.textContent = "Добавить";
+      btn.onclick = async () => {
+        btn.disabled = true; btn.textContent = "Отправка...";
+        await addDoc(collection(db,"friendRequests"), {
+          from: me.uid, to: u.uid,
+          fromUsername: me.username, fromNickname: me.nickname, fromAvatar: me.avatar || null,
+          status: "pending", createdAt: serverTimestamp()
+        });
+        btn.textContent = "Заявка отправлена";
+        $("add-friend-toast").textContent = `Заявка отправлена ${u.username}`;
+        $("add-friend-toast").classList.remove("hidden");
+        setTimeout(() => $("add-friend-toast").classList.add("hidden"), 2000);
+      };
+    }
+    row.appendChild(av); row.appendChild(info); row.appendChild(btn);
+    box.appendChild(row);
+  }
+}
+
+// ---------- friend requests / notifications ----------
+function listenFriendRequests(){
+  if(unsubRequests) unsubRequests();
+  const q = query(collection(db,"friendRequests"), where("to","==",me.uid), where("status","==","pending"));
+  unsubRequests = onSnapshot(q, (snap) => {
+    const count = snap.size;
+    $("notif-badge").textContent = count > 9 ? "9+" : String(count);
+    $("notif-badge").classList.toggle("hidden", count === 0);
+    if($("notif-overlay").classList.contains("hidden") === false){
+      renderRequestsList(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }
+    window._pendingRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  });
+}
+
+$("notifications-btn").onclick = () => {
+  $("notif-overlay").classList.remove("hidden");
+  renderRequestsList(window._pendingRequests || []);
+};
+$("close-notif").onclick = () => $("notif-overlay").classList.add("hidden");
+
+function renderRequestsList(requests){
+  const box = $("requests-list");
+  box.innerHTML = "";
+  if(requests.length === 0){
+    box.innerHTML = '<div class="empty-hint">Нет новых заявок</div>';
+    return;
+  }
+  requests.forEach(r => {
+    const row = document.createElement("div");
+    row.className = "search-result";
+    const av = document.createElement("div");
+    av.className = "avatar"; av.style.width="36px"; av.style.height="36px"; av.style.fontSize="14px";
+    renderAvatar(av, r.fromNickname, r.fromAvatar);
+    const info = document.createElement("div");
+    info.className = "search-result-info";
+    info.innerHTML = `<div style="font-weight:600;font-size:14px;">${escapeHtml(r.fromNickname)}</div><div style="font-size:12px;color:var(--text-muted);">@${escapeHtml(r.fromUsername)}</div>`;
+    const acceptBtn = document.createElement("button");
+    acceptBtn.className = "btn btn-sm"; acceptBtn.textContent = "✓";
+    acceptBtn.onclick = async () => { await acceptFriendRequest(r); };
+    const declineBtn = document.createElement("button");
+    declineBtn.className = "btn btn-sm btn-danger"; declineBtn.textContent = "✕";
+    declineBtn.style.marginLeft = "4px";
+    declineBtn.onclick = async () => { await updateDoc(doc(db,"friendRequests",r.id), { status: "declined" }); };
+    row.appendChild(av); row.appendChild(info); row.appendChild(acceptBtn); row.appendChild(declineBtn);
     box.appendChild(row);
   });
 }
 
-// ---------- CHAT ----------
+async function acceptFriendRequest(r){
+  const fromUserDoc = await getDoc(doc(db,"users",r.from));
+  const fromUser = fromUserDoc.data();
+  await setDoc(doc(db,"users",me.uid,"friends",r.from), {
+    username: fromUser.username, nickname: fromUser.nickname, avatar: fromUser.avatar || null,
+    verified: fromUser.verified || false, addedAt: serverTimestamp()
+  });
+  await setDoc(doc(db,"users",r.from,"friends",me.uid), {
+    username: me.username, nickname: me.nickname, avatar: me.avatar || null,
+    verified: me.verified || false, addedAt: serverTimestamp()
+  });
+  await updateDoc(doc(db,"friendRequests",r.id), { status: "accepted" });
+}
+
+// ---------- chat: friends ----------
 function openChat(friend){
   activeFriend = friend;
-  renderFriendList();
+  activeGroup = null;
+  renderList();
   $("no-chat").classList.add("hidden");
   $("chat-view").classList.remove("hidden");
   $("app").classList.add("chat-open");
-  renderAvatar($("chat-avatar"), friend.nickname, friend.avatar);
-  
-  const verifiedBadge = friend.isVerified ? '<span class="badge-verified">☑️</span>' : '';
-  $("chat-title").innerHTML = `${friend.nickname}${verifiedBadge}`;
+  $("group-manage-btn").classList.add("hidden");
+  renderChatHeader();
+  renderComposerLock();
 
   if(unsubMessages) unsubMessages();
   const chatId = pairId(me.uid, friend.uid);
   const q = query(collection(db,"chats",chatId,"messages"), orderBy("createdAt"), limit(200));
   unsubMessages = onSnapshot(q, (snap) => {
-    const msgs = snap.docs.map(d => d.data());
-    renderMessages(msgs);
+    renderMessages(snap.docs.map(d => d.data()), false);
   });
 }
 
-function renderMessages(msgs){
+// ---------- chat: groups ----------
+function openGroup(group){
+  activeGroup = group;
+  activeFriend = null;
+  renderList();
+  $("no-chat").classList.add("hidden");
+  $("chat-view").classList.remove("hidden");
+  $("app").classList.add("chat-open");
+  renderChatHeader();
+  renderComposerLock();
+
+  if(unsubMessages) unsubMessages();
+  const q = query(collection(db,"groups",group.id,"messages"), orderBy("createdAt"), limit(200));
+  unsubMessages = onSnapshot(q, (snap) => {
+    renderMessages(snap.docs.map(d => d.data()), true);
+  });
+}
+
+function renderChatHeader(){
+  if(activeFriend){
+    renderAvatar($("chat-avatar"), activeFriend.nickname, activeFriend.avatar);
+    $("chat-title").innerHTML = escapeHtml(activeFriend.nickname) + " " + verifiedBadge(activeFriend.verified);
+    $("group-manage-btn").classList.add("hidden");
+  } else if(activeGroup){
+    renderAvatar($("chat-avatar"), activeGroup.name, activeGroup.avatar, true);
+    $("chat-title").innerHTML = escapeHtml(activeGroup.name) + " " + verifiedBadge(activeGroup.verified);
+    $("group-manage-btn").classList.toggle("hidden", activeGroup.ownerId !== me.uid);
+  }
+}
+
+function canWriteInActiveConversation(){
+  if(activeFriend) return true;
+  if(activeGroup) return activeGroup.ownerId === me.uid || (activeGroup.admins||[]).includes(me.uid);
+  return false;
+}
+function renderComposerLock(){
+  const can = canWriteInActiveConversation();
+  $("message-input").disabled = !can;
+  $("message-input").placeholder = can ? "Написать сообщение..." : "Только владелец и админы могут писать";
+  $("composer-lock-hint").classList.toggle("hidden", can);
+}
+
+function renderMessages(msgs, isGroup){
   const box = $("messages");
   box.innerHTML = "";
+  const emptyName = activeFriend ? activeFriend.nickname : activeGroup.name;
   if(msgs.length === 0){
-    box.innerHTML = `<div id="empty-chat">Начните переписку с ${activeFriend.nickname}</div>`;
+    box.innerHTML = `<div id="empty-chat">${isGroup ? "Начните переписку в группе " + escapeHtml(emptyName) : "Начните переписку с " + escapeHtml(emptyName)}</div>`;
     return;
   }
   msgs.forEach(m => {
     const row = document.createElement("div");
     row.className = "msg-row";
-    const isMe = m.from === me.uid;
-    const name = isMe ? me.nickname : activeFriend.nickname;
-    const isVerified = isMe ? me.isVerified : activeFriend.isVerified;
-    const verifiedBadge = isVerified ? '<span class="badge-verified">☑️</span>' : '';
-    
+    let name, avatarUrl, isVerified;
+    if(isGroup){
+      name = m.fromNickname || "?";
+      avatarUrl = m.fromAvatar || null;
+      isVerified = m.fromVerified || false;
+    } else {
+      const isMe = m.from === me.uid;
+      name = isMe ? me.nickname : activeFriend.nickname;
+      avatarUrl = isMe ? me.avatar : activeFriend.avatar;
+      isVerified = isMe ? me.verified : activeFriend.verified;
+    }
     const av = document.createElement("div");
     av.className = "avatar"; av.style.width="40px"; av.style.height="40px"; av.style.fontSize="14px";
-    renderAvatar(av, name, isMe ? me.avatar : activeFriend.avatar);
+    renderAvatar(av, name, avatarUrl);
     const body = document.createElement("div");
     body.className = "msg-body";
-    body.innerHTML = `<div class="msg-meta"><span class="msg-author">${name}${verifiedBadge}</span><span class="msg-time">${fmtTime(m.createdAt)}</span></div><div class="msg-text"></div>`;
+    body.innerHTML = `<div class="msg-meta"><span class="msg-author">${escapeHtml(name)} ${verifiedBadge(isVerified)}</span><span class="msg-time">${fmtTime(m.createdAt)}</span></div><div class="msg-text"></div>`;
     body.querySelector(".msg-text").textContent = m.text;
     row.appendChild(av); row.appendChild(body);
     box.appendChild(row);
@@ -765,24 +914,156 @@ function renderMessages(msgs){
 $("message-input").addEventListener("keydown", async (e) => {
   if(e.key !== "Enter") return;
   const text = e.target.value.trim();
-  if(!text || !activeFriend) return;
+  if(!text || !canWriteInActiveConversation()) return;
   e.target.value = "";
-  const chatId = pairId(me.uid, activeFriend.uid);
-  await addDoc(collection(db,"chats",chatId,"messages"), {
-    from: me.uid, text, createdAt: serverTimestamp()
-  });
+  if(activeFriend){
+    const chatId = pairId(me.uid, activeFriend.uid);
+    await addDoc(collection(db,"chats",chatId,"messages"), { from: me.uid, text, createdAt: serverTimestamp() });
+  } else if(activeGroup){
+    await addDoc(collection(db,"groups",activeGroup.id,"messages"), {
+      from: me.uid, fromNickname: me.nickname, fromAvatar: me.avatar || null, fromVerified: me.verified || false,
+      text, createdAt: serverTimestamp()
+    });
+  }
 });
 
-// ---------- SETTINGS ----------
-function openSettings(){ 
-  $("nickname-input").value = me.nickname || "";
-  $("username-input").value = me.username || "";
-  $("username-error").classList.add("hidden");
-  $("settings-overlay").classList.remove("hidden"); 
+// ---------- groups: create ----------
+function openCreateGroupModal(){
+  $("group-name-input").value = "";
+  const picker = $("group-members-picker");
+  picker.innerHTML = "";
+  if(friends.length === 0){
+    picker.innerHTML = '<div class="empty-hint">Сначала добавь друзей</div>';
+  } else {
+    friends.forEach(f => {
+      const row = document.createElement("label");
+      row.className = "checkbox-row";
+      row.innerHTML = `<input type="checkbox" value="${f.uid}" /><span>${escapeHtml(f.nickname)}</span>`;
+      picker.appendChild(row);
+    });
+  }
+  $("create-group-overlay").classList.remove("hidden");
 }
-$("settings-btn-bar").onclick = openSettings;
+$("close-create-group").onclick = () => $("create-group-overlay").classList.add("hidden");
+$("create-group-confirm-btn").onclick = async () => {
+  const name = $("group-name-input").value.trim();
+  if(!name) return;
+  const selected = Array.from($("group-members-picker").querySelectorAll("input:checked")).map(i => i.value);
+  const groupRef = await addDoc(collection(db,"groups"), {
+    name, ownerId: me.uid, admins: [], members: [me.uid, ...selected],
+    verified: false, avatar: null, createdAt: serverTimestamp()
+  });
+  $("create-group-overlay").classList.add("hidden");
+  switchTab("groups");
+};
+
+// ---------- group management ----------
+$("group-manage-btn").onclick = () => openGroupManage();
+$("close-group-manage").onclick = () => $("group-manage-overlay").classList.add("hidden");
+
+async function openGroupManage(){
+  if(!activeGroup) return;
+  $("group-manage-title").textContent = "Управление: " + activeGroup.name;
+  const box = $("group-members-list");
+  box.innerHTML = "Загрузка...";
+  const memberDocs = await Promise.all(activeGroup.members.map(uid => getDoc(doc(db,"users",uid))));
+  box.innerHTML = "";
+  memberDocs.forEach((d, idx) => {
+    const uid = activeGroup.members[idx];
+    if(!d.exists()) return;
+    const u = d.data();
+    const isOwner = uid === activeGroup.ownerId;
+    const isAdmin = (activeGroup.admins||[]).includes(uid);
+    const row = document.createElement("div");
+    row.className = "member-row";
+    const av = document.createElement("div");
+    av.className = "avatar"; av.style.width="32px"; av.style.height="32px"; av.style.fontSize="13px";
+    renderAvatar(av, u.nickname, u.avatar);
+    const info = document.createElement("div");
+    info.style.flex = "1"; info.style.minWidth = "0";
+    info.innerHTML = `<div style="font-size:14px;font-weight:500;">${escapeHtml(u.nickname)} ${verifiedBadge(u.verified)}</div><div class="member-role">${isOwner ? "Владелец" : isAdmin ? "Админ" : "Участник"}</div>`;
+    row.appendChild(av); row.appendChild(info);
+    if(!isOwner && activeGroup.ownerId === me.uid){
+      const btn = document.createElement("button");
+      btn.className = "btn btn-sm " + (isAdmin ? "btn-secondary" : "");
+      btn.textContent = isAdmin ? "Снять админа" : "Сделать админом";
+      btn.onclick = async () => {
+        await updateDoc(doc(db,"groups",activeGroup.id), {
+          admins: isAdmin ? arrayRemove(uid) : arrayUnion(uid)
+        });
+        setTimeout(openGroupManage, 300);
+      };
+      row.appendChild(btn);
+    }
+    box.appendChild(row);
+  });
+}
+$("add-group-members-btn").onclick = () => {
+  const picker = $("group-members-picker");
+  picker.innerHTML = "";
+  const nonMembers = friends.filter(f => !activeGroup.members.includes(f.uid));
+  if(nonMembers.length === 0){
+    picker.innerHTML = '<div class="empty-hint">Все друзья уже в группе</div>';
+  } else {
+    nonMembers.forEach(f => {
+      const row = document.createElement("label");
+      row.className = "checkbox-row";
+      row.innerHTML = `<input type="checkbox" value="${f.uid}" /><span>${escapeHtml(f.nickname)}</span>`;
+      picker.appendChild(row);
+    });
+  }
+  $("group-name-input").parentElement.querySelector("h2").textContent = "Добавить участников";
+  $("create-group-overlay").classList.remove("hidden");
+  $("group-name-input").parentElement.classList.add("adding-members-mode");
+  const originalHandler = $("create-group-confirm-btn").onclick;
+  $("create-group-confirm-btn").textContent = "Добавить";
+  $("create-group-confirm-btn").onclick = async () => {
+    const selected = Array.from(picker.querySelectorAll("input:checked")).map(i => i.value);
+    if(selected.length){
+      await updateDoc(doc(db,"groups",activeGroup.id), { members: arrayUnion(...selected) });
+    }
+    $("create-group-overlay").classList.add("hidden");
+    $("create-group-confirm-btn").textContent = "Создать";
+    $("group-name-input").parentElement.querySelector("h2").textContent = "Создать группу";
+    setTimeout(openGroupManage, 300);
+  };
+  $("group-name-input").closest(".modal").querySelector("label.field-label").style.display = "none";
+  $("group-name-input").style.display = "none";
+};
+$("close-create-group").addEventListener("click", () => {
+  $("group-name-input").style.display = "";
+  $("group-name-input").closest(".modal").querySelector("label.field-label").style.display = "";
+});
+
+// ---------- settings ----------
+function openSettings(){
+  $("nickname-input").value = me.nickname;
+  $("username-input").value = me.username;
+  renderAvatar($("settings-avatar"), me.nickname, me.avatar);
+  updateUsernameHint();
+  $("settings-overlay").classList.remove("hidden");
+}
+$("user-bar").onclick = openSettings;
 $("close-settings").onclick = () => $("settings-overlay").classList.add("hidden");
 $("theme-toggle-settings").onclick = toggleTheme;
+
+function updateUsernameHint(){
+  const hint = $("username-hint");
+  if(me.usernameChangedAt){
+    const changedAt = me.usernameChangedAt.toDate ? me.usernameChangedAt.toDate().getTime() : me.usernameChangedAt;
+    const remain = USERNAME_COOLDOWN_MS - (Date.now() - changedAt);
+    if(remain > 0){
+      const days = Math.ceil(remain / (24*60*60*1000));
+      hint.textContent = `Юзернейм можно менять раз в 7 дней. Осталось: ${days} дн.`;
+      hint.classList.add("error");
+      $("username-input").disabled = true;
+      return;
+    }
+  }
+  hint.textContent = "3-20 символов: латиница, цифры, _ . Менять можно раз в 7 дней.";
+  hint.classList.remove("error");
+  $("username-input").disabled = false;
+}
 
 $("avatar-input").addEventListener("change", (e) => {
   const file = e.target.files[0];
@@ -796,51 +1077,116 @@ $("avatar-input").addEventListener("change", (e) => {
 });
 
 $("save-settings-btn").onclick = async () => {
-  $("username-error").classList.add("hidden");
   const newNickname = $("nickname-input").value.trim() || me.username;
-  const newUsername = $("username-input").value.trim().toLowerCase();
+  const newUsernameRaw = $("username-input").value.trim().toLowerCase();
+  const updates = { nickname: newNickname, avatar: me.avatar || null };
 
-  const updateData = { nickname: newNickname, avatar: me.avatar || null };
-
-  if (newUsername !== me.username) {
-    if(!/^[a-z0-9_.]{3,20}$/.test(newUsername)){
-      $("username-error").textContent = "3-20 символов: латиница, цифры, _ .";
-      $("username-error").classList.remove("hidden");
+  if(newUsernameRaw !== me.username){
+    if(!validUsername(newUsernameRaw)){
+      $("username-hint").textContent = "3-20 символов: латиница, цифры, _ .";
+      $("username-hint").classList.add("error");
       return;
     }
-
-    const lastChange = me.lastUsernameChange?.toDate ? me.lastUsernameChange.toDate().getTime() : 0;
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    
-    if (lastChange && (Date.now() - lastChange < sevenDays)) {
-      const daysLeft = Math.ceil((sevenDays - (Date.now() - lastChange)) / (1000 * 60 * 60 * 24));
-      $("username-error").textContent = `Сменить юзернейм можно будет только через ${daysLeft} дн.`;
-      $("username-error").classList.remove("hidden");
-      return;
-    }
-
-    try {
-      const q = query(collection(db,"users"), where("username","==",newUsername), limit(1));
-      const takenSnap = await getDocs(q);
-      if(!takenSnap.empty && takenSnap.docs[0].id !== me.uid){
-        $("username-error").textContent = "Этот юзернейм уже занят.";
-        $("username-error").classList.remove("hidden");
+    if(me.usernameChangedAt){
+      const changedAt = me.usernameChangedAt.toDate ? me.usernameChangedAt.toDate().getTime() : me.usernameChangedAt;
+      if(Date.now() - changedAt < USERNAME_COOLDOWN_MS){
+        updateUsernameHint();
         return;
       }
-    } catch(e) {}
-
-    updateData.username = newUsername;
-    updateData.lastUsernameChange = serverTimestamp();
-    me.username = newUsername;
+    }
+    const takenSnap = await getDocs(query(collection(db,"users"), where("username","==",newUsernameRaw), limit(1)));
+    if(!takenSnap.empty){
+      $("username-hint").textContent = "Этот юзернейм уже занят.";
+      $("username-hint").classList.add("error");
+      return;
+    }
+    updates.username = newUsernameRaw;
+    updates.usernameChangedAt = serverTimestamp();
+    me.username = newUsernameRaw;
   }
 
-  await updateDoc(doc(db,"users",me.uid), updateData);
   me.nickname = newNickname;
+  await updateDoc(doc(db,"users",me.uid), updates);
   renderMyProfile();
+  if(activeGroup) renderChatHeader();
   $("settings-overlay").classList.add("hidden");
 };
 
-// ---------- WEBRTC / CALLS ----------
+// ---------- admin panel ----------
+$("admin-btn").onclick = () => {
+  $("admin-overlay").classList.remove("hidden");
+  $("admin-search-input").value = "";
+  $("admin-results").innerHTML = "";
+};
+$("close-admin").onclick = () => $("admin-overlay").classList.add("hidden");
+
+let adminTab = "users";
+$("admin-tab-users").onclick = () => { adminTab = "users"; $("admin-tab-users").classList.add("active"); $("admin-tab-groups").classList.remove("active"); $("admin-results").innerHTML=""; };
+$("admin-tab-groups").onclick = () => { adminTab = "groups"; $("admin-tab-groups").classList.add("active"); $("admin-tab-users").classList.remove("active"); $("admin-results").innerHTML=""; };
+
+let adminSearchTimeout;
+$("admin-search-input").addEventListener("input", (e) => {
+  clearTimeout(adminSearchTimeout);
+  const val = e.target.value.trim().toLowerCase();
+  adminSearchTimeout = setTimeout(() => runAdminSearch(val), 250);
+});
+
+async function runAdminSearch(val){
+  const box = $("admin-results");
+  box.innerHTML = "";
+  if(!val) return;
+  if(adminTab === "users"){
+    const q = query(collection(db,"users"), orderBy("username"), where("username",">=",val), where("username","<=",val+"\uf8ff"), limit(10));
+    const snap = await getDocs(q);
+    snap.docs.forEach(d => {
+      const u = { uid: d.id, ...d.data() };
+      const row = document.createElement("div");
+      row.className = "search-result";
+      const av = document.createElement("div");
+      av.className = "avatar"; av.style.width="32px"; av.style.height="32px"; av.style.fontSize="13px";
+      renderAvatar(av, u.nickname, u.avatar);
+      const info = document.createElement("div");
+      info.className = "search-result-info";
+      info.innerHTML = `<div style="font-weight:600;font-size:14px;">${escapeHtml(u.nickname)}</div><div style="font-size:12px;color:var(--text-muted);">@${escapeHtml(u.username)}</div>`;
+      const btn = document.createElement("button");
+      btn.className = "btn btn-sm " + (u.verified ? "btn-secondary" : "");
+      btn.textContent = u.verified ? "Снять галочку" : "Выдать галочку";
+      btn.onclick = async () => {
+        await updateDoc(doc(db,"users",u.uid), { verified: !u.verified });
+        runAdminSearch(val);
+      };
+      row.appendChild(av); row.appendChild(info); row.appendChild(btn);
+      box.appendChild(row);
+    });
+    if(snap.empty) box.innerHTML = '<div class="empty-hint">Никого не найдено</div>';
+  } else {
+    const snap = await getDocs(collection(db,"groups"));
+    const matches = snap.docs.filter(d => (d.data().name||"").toLowerCase().includes(val));
+    matches.forEach(d => {
+      const g = { id: d.id, ...d.data() };
+      const row = document.createElement("div");
+      row.className = "search-result";
+      const av = document.createElement("div");
+      av.className = "avatar"; av.style.width="32px"; av.style.height="32px"; av.style.fontSize="13px";
+      renderAvatar(av, g.name, g.avatar, true);
+      const info = document.createElement("div");
+      info.className = "search-result-info";
+      info.innerHTML = `<div style="font-weight:600;font-size:14px;">${escapeHtml(g.name)}</div><div style="font-size:12px;color:var(--text-muted);">${g.members.length} участников</div>`;
+      const btn = document.createElement("button");
+      btn.className = "btn btn-sm " + (g.verified ? "btn-secondary" : "");
+      btn.textContent = g.verified ? "Снять галочку" : "Выдать галочку";
+      btn.onclick = async () => {
+        await updateDoc(doc(db,"groups",g.id), { verified: !g.verified });
+        runAdminSearch(val);
+      };
+      row.appendChild(av); row.appendChild(info); row.appendChild(btn);
+      box.appendChild(row);
+    });
+    if(matches.length === 0) box.innerHTML = '<div class="empty-hint">Ничего не найдено</div>';
+  }
+}
+
+// ================= CALLS (WebRTC + Firestore signaling) =================
 const servers = { iceServers: [{ urls: ["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"] }] };
 let pc = null;
 let localStream = null;
@@ -896,8 +1242,7 @@ async function getMedia(withVideo){
 function createPC(){
   pc = new RTCPeerConnection(servers);
   pc.ontrack = (event) => {
-    const remoteVideo = $("remote-video");
-    remoteVideo.srcObject = event.streams[0];
+    $("remote-video").srcObject = event.streams[0];
   };
   return pc;
 }
@@ -1039,9 +1384,7 @@ $("recall-btn").onclick = async () => {
   teardownCall();
   if(friend) await startCall(friend, type);
 };
-$("exit-missed-btn").onclick = () => {
-  teardownCall();
-};
+$("exit-missed-btn").onclick = () => { teardownCall(); };
 
 $("call-audio-btn").onclick = () => activeFriend && startCall(activeFriend, "audio");
 $("call-video-btn").onclick = () => activeFriend && startCall(activeFriend, "video");
@@ -1076,7 +1419,7 @@ $("toggle-share-btn").onclick = async () => {
       sharing = true;
       $("toggle-share-btn").classList.add("active");
       screenTrack.onended = () => stopShare(sender);
-    }catch(e){ /* cancelled */ }
+    }catch(e){ /* user cancelled */ }
   } else {
     const sender = pc.getSenders().find(s => s.track && s.track.kind === "video");
     stopShare(sender);
