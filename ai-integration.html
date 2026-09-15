@@ -1,0 +1,89 @@
+<script src="ai-chat.js"></script>
+<style>
+  #ai-helper-btn{
+    position:fixed;bottom:20px;right:20px;
+    width:60px;height:60px;border-radius:50%;
+    background:var(--blurple);color:#fff;border:none;
+    font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    z-index:150;transition:0.2s;
+  }
+  #ai-helper-btn:hover{transform:scale(1.1);background:var(--blurple-hover);}
+  #ai-modal{z-index:150;}
+  #ai-response{
+    margin-top:10px;padding:12px;
+    background:var(--bg-input);border-radius:8px;
+    min-height:60px;max-height:300px;overflow-y:auto;
+    color:var(--text-normal);font-size:14px;line-height:1.5;
+    border-left:3px solid var(--blurple);
+  }
+  #ai-response.loading{color:var(--text-muted);font-style:italic;}
+</style>
+
+<!-- AI Helper Button -->
+<button id="ai-helper-btn" title="AI Помощник (TOMATOAI)">🤖</button>
+
+<!-- AI Chat Modal -->
+<div id="ai-modal" class="overlay hidden">
+  <div class="modal" style="width:min(480px,100%);">
+    <span class="modal-close" id="close-ai">✕</span>
+    <h2>🤖 TOMATOAI Помощник</h2>
+    <p class="sub">Задай свой вопрос и получи ответ от AI</p>
+    <div id="ai-response" class="hidden">Loading...</div>
+    <textarea id="ai-input" class="field-input" placeholder="Напиши свой вопрос..." style="resize:vertical;min-height:80px;"></textarea>
+    <div class="modal-row" style="margin-top:10px;">
+      <button class="btn" id="ai-send-btn" style="flex:1;">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// AI Helper Modal Logic
+document.getElementById('ai-helper-btn').addEventListener('click', () => {
+  document.getElementById('ai-modal').classList.remove('hidden');
+  document.getElementById('ai-input').focus();
+});
+
+document.getElementById('close-ai').addEventListener('click', () => {
+  document.getElementById('ai-modal').classList.add('hidden');
+});
+
+document.getElementById('ai-send-btn').addEventListener('click', async () => {
+  const question = document.getElementById('ai-input').value.trim();
+  if (!question) return;
+
+  const responseDiv = document.getElementById('ai-response');
+  const sendBtn = document.getElementById('ai-send-btn');
+  
+  // Show loading state
+  responseDiv.classList.remove('hidden');
+  responseDiv.classList.add('loading');
+  responseDiv.textContent = 'Загрузка...';
+  sendBtn.disabled = true;
+
+  try {
+    const response = await bitrateAI.chat(question);
+    responseDiv.classList.remove('loading');
+    responseDiv.textContent = response;
+    document.getElementById('ai-input').value = '';
+  } catch (error) {
+    responseDiv.classList.remove('loading');
+    responseDiv.textContent = 'Ошибка: ' + error.message;
+  } finally {
+    sendBtn.disabled = false;
+  }
+});
+
+// Allow Enter to send message
+document.getElementById('ai-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.ctrlKey) {
+    document.getElementById('ai-send-btn').click();
+  }
+});
+
+// Close modal when clicking outside
+document.getElementById('ai-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'ai-modal') {
+    document.getElementById('ai-modal').classList.add('hidden');
+  }
+});
+</script>
