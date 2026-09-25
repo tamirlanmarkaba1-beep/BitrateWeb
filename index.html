@@ -5,6 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#5865f2" />
 <title>Bitrate</title>
+<script>
+  // При сбое соединения или сервера пробуем перезагрузить главную страницу
+  window.addEventListener('error', function(e) {
+    if (document.body && document.body.innerText.includes('500') || document.body.innerText.includes('Server Error')) {
+      setTimeout(() => { window.location.reload(); }, 2000);
+    }
+  });
+
+  // Автоматически обновлять страницу при повторном разворачивании приложения
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      // Если сайт висит на ошибке, сбрасываем на главную
+      if (document.title.includes('Error') || document.body.innerText.includes('500')) {
+        window.location.href = 'https://tamirlanmarkaba1-beep.github.io/BitrateWeb/';
+      }
+    }
+  });
+</script>
 <style>
   :root{
     --bg-tertiary:#1e1f22;
